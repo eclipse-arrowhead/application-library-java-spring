@@ -1,4 +1,4 @@
-package eu.arrowhead.client.skeleton.common;
+package eu.arrowhead.client.library;
 
 
 import java.security.PrivateKey;
@@ -22,8 +22,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 
-import eu.arrowhead.client.skeleton.common.util.ClientCommonConstants;
-import eu.arrowhead.client.skeleton.common.util.CoreServiceUri;
+import eu.arrowhead.client.library.util.ClientCommonConstants;
+import eu.arrowhead.client.library.util.CoreServiceUri;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;

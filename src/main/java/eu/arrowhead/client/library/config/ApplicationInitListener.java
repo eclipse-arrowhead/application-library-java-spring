@@ -1,4 +1,4 @@
-package eu.arrowhead.client.skeleton.common.config;
+package eu.arrowhead.client.library.config;
 
 import java.io.IOException;
 import java.security.KeyStore;
@@ -23,7 +23,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.client.skeleton.common.ArrowheadService;
+import eu.arrowhead.client.library.ArrowheadService;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;

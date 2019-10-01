@@ -1,4 +1,4 @@
-package eu.arrowhead.client.skeleton.common.util;
+package eu.arrowhead.client.library.util;
 
 public class ClientCommonConstants {
 	
