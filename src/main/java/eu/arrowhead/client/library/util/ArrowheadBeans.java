@@ -64,12 +64,4 @@ public class ArrowheadBeans {
 	public static HttpService getHttpService() {
 		return httpService;
 	}
-	
-	//=================================================================================================
-	// assistant methods
-	
-	//-------------------------------------------------------------------------------------------------
-	private ArrowheadBeans() {
-		throw new UnsupportedOperationException();
-	}
 }
