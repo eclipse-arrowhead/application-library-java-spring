@@ -37,7 +37,7 @@ public class ArrowheadBeans {
 	/** 
 	 * @return the ArrowheadService spring managed bean
 	 */
-	public static ArrowheadService getArrowhedService() {
+	public static ArrowheadService getArrowheadService() {
 		return arrowheadService;
 	}
 	
