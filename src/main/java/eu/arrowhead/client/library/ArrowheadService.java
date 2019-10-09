@@ -29,6 +29,7 @@ import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
+import eu.arrowhead.common.dto.shared.EventPublishRequestDTO;
 import eu.arrowhead.common.dto.shared.OrchestrationFormRequestDTO;
 import eu.arrowhead.common.dto.shared.OrchestrationFormRequestDTO.Builder;
 import eu.arrowhead.common.dto.shared.OrchestrationResponseDTO;
@@ -36,6 +37,7 @@ import eu.arrowhead.common.dto.shared.ServiceQueryFormDTO;
 import eu.arrowhead.common.dto.shared.ServiceQueryResultDTO;
 import eu.arrowhead.common.dto.shared.ServiceRegistryRequestDTO;
 import eu.arrowhead.common.dto.shared.ServiceRegistryResponseDTO;
+import eu.arrowhead.common.dto.shared.SubscriptionRequestDTO;
 import eu.arrowhead.common.dto.shared.SystemRequestDTO;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.AuthException;
@@ -405,6 +407,89 @@ public class ArrowheadService {
 		
 		final ResponseEntity<T> response = httpService.sendRequest(uri, httpMethod, responseType, payload);
 		return response.getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'subscription' request to Event Handler Core System.
+	 * 
+	 * @param request SubscriptionRequestDTO which represents the required payload of the http(s) request
+	 * @throws AuthException when you are not authorized by Event Handler Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
+	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
+	 * @throws UnavailableServerException when Event Handler Core System is not available
+	 */
+	public void subscribeToEventHandler(final SubscriptionRequestDTO request) {
+
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_SUBSCRIBE_SERVICE);
+		if (uri == null) {
+			logger.debug("Subscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_SUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
+			return;
+		}
+		
+		httpService.sendRequest( Utilities.createURI( getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath() ), HttpMethod.POST, Void.class, request );
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'unsubscription' request to Event Handler Core System.
+	 * 
+	 * @param eventType String which represents the required eventType parameter of the http(s) request
+	 * @param subscriberName String which represents the required subscriberName parameter of the http(s) request
+	 * @param subscriberAddress String which represents the required subscriberAddress parameter of the http(s) request
+	 * @param subscriberPort int which represents the required subscriberPort parameter of the http(s) request
+	 * @throws AuthException when you are not authorized by Event Handler Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
+	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
+	 * @throws UnavailableServerException when Event Handler Core System is not available
+	 */
+	public void unsubscribeFromEventHandler(
+			final String eventType,
+			final String subscriberName,
+			final String subscriberAddress,
+			final int subscriberPort ) {
+
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_SUBSCRIBE_SERVICE);
+		if (uri == null) {
+			logger.debug("Subscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_SUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
+			return;
+		}
+		
+		final UriComponents unsubscribeUri = Utilities.createURI( 
+				getUriScheme(), 
+				uri.getAddress(), 
+				uri.getPort(), 
+				uri.getPath(),
+				eventType,
+				subscriberName,
+				subscriberAddress,
+				String.valueOf( subscriberPort ) );
+		
+		httpService.sendRequest( unsubscribeUri, HttpMethod.DELETE, Void.class );
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'publish' request to Event Handler Core System.
+	 * 
+	 * @param request EventPublishRequestDTO which represents the required payload of the http(s) request
+	 * @throws AuthException when you are not authorized by Event Handler Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
+	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
+	 * @throws UnavailableServerException when Event Handler Core System is not available
+	 */
+	public void publishToEventHandler(final EventPublishRequestDTO request) {
+
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_PUBLISH_SERVICE);
+		if (uri == null) {
+			logger.debug("Publishing couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_PUBLISH_SERVICE.name() + " not known by Arrowhead Context");
+			return;
+		}
+		
+		httpService.sendRequest( Utilities.createURI( getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath() ), HttpMethod.POST, Void.class, request );
 	}
 	
 	//=================================================================================================
