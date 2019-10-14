@@ -108,7 +108,7 @@ public class ArrowheadService {
 	public void updateCoreServiceURIs(final CoreSystem coreSystem) {
 		final List<CoreSystemService> publicServices = getPublicServicesOfCoreSystem(coreSystem);
 		if (publicServices.isEmpty()) {
-			logger.debug("'{}' core system has no public service.", coreSystem.name());
+			logger.info("'{}' core system has no public service.", coreSystem.name());
 			return;
 		}
 		
@@ -117,7 +117,7 @@ public class ArrowheadService {
 				final ResponseEntity<ServiceQueryResultDTO> response = queryServiceReqistryByCoreService(coreService);
 				
 				if (response.getBody().getServiceQueryData().isEmpty()) {
-					logger.debug("'{}' core service couldn't be retrieved due to the following reason: not registered by Serivce Registry", coreService.getServiceDefinition());
+					logger.info("'{}' core service couldn't be retrieved due to the following reason: not registered by Serivce Registry", coreService.getServiceDefinition());
 					arrowheadContext.remove(coreService.getServiceDefinition() + ClientCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX);
 					
 				} else {
