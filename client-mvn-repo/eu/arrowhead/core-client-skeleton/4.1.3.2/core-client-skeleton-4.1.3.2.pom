@@ -1,0 +1,80 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+  	<parent>
+    	<groupId>eu.arrowhead</groupId>
+    	<artifactId>core</artifactId>
+    	<version>${revision}</version>
+  	</parent>
+  
+  	<artifactId>arrowhead-core-common</artifactId>
+  	<packaging>jar</packaging>
+  	<name>Core Common</name>
+  	<description>Common resources for the Arrowhead core services</description>
+  	
+  	<properties>
+  		<client.skeleton>core-client-skeleton</client.skeleton>
+  	</properties>
+  
+  	<build>  		
+  		<resources>
+			<resource>
+				<directory>src/main/java</directory>
+				<filtering>false</filtering>
+			</resource>
+		</resources>
+  	
+		<plugins>			
+			<plugin>
+    			<groupId>org.springframework.boot</groupId>
+    			<artifactId>spring-boot-maven-plugin</artifactId>
+    			<configuration>
+          			<skip>true</skip>
+    			</configuration>
+  			</plugin>
+  			
+  			<plugin>
+  				<groupId>org.apache.maven.plugins</groupId>
+	  			<artifactId>maven-shade-plugin</artifactId>
+	  			<executions>
+	  				<execution>
+	  					<phase>package</phase>
+	  					<goals>
+	  						<goal>shade</goal>
+	  					</goals>
+			  			<configuration>
+							<shadedArtifactAttached>false</shadedArtifactAttached>
+             				<finalName>${client.skeleton}</finalName>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<minimizeJar>false</minimizeJar>
+							<artifactSet>
+								<includes>
+									<include>eu.arrowhead:arrowhead-core-common</include>
+								</includes>
+							</artifactSet>
+							<filters>
+								<filter>
+									<artifact>eu.arrowhead:arrowhead-core-common</artifact>
+									<includes>
+										<include>eu/arrowhead/common/Utilities.*</include>
+										<include>eu/arrowhead/common/Utilities$1.*</include>
+										<include>eu/arrowhead/common/CommonConstants.*</include>
+										<include>eu/arrowhead/common/Defaults.*</include>
+										<include>eu/arrowhead/common/SSLProperties.*</include>
+										<include>eu/arrowhead/common/core/*.*</include>
+										<include>eu/arrowhead/common/dto/shared/*.*</include>
+										<include>eu/arrowhead/common/exception/*.*</include>
+										<include>eu/arrowhead/common/http/*.*</include>
+										<include>eu/arrowhead/common/filter/ArrowheadFilter.*</include>
+										<include>eu/arrowhead/common/filter/thirdparty/*.*</include>
+										<include>eu/arrowhead/common/security/AccessControlFilter.*</include>
+										<include>eu/arrowhead/common/token/*.*</include>
+									</includes>
+								</filter>
+							</filters>
+						</configuration>	
+	  				</execution>
+	  			</executions>
+  			</plugin>  			
+	 	</plugins>
+  	</build>
+</project>
