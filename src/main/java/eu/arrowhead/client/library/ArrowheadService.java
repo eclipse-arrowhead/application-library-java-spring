@@ -6,6 +6,7 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.UriComponents;
 
 import eu.arrowhead.client.library.util.ClientCommonConstants;
@@ -457,15 +459,18 @@ public class ArrowheadService {
 			return;
 		}
 		
+		final MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+		requestParams.add( CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_EVENT_TYPE, eventType);
+		requestParams.add( CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_SYSTEM_NAME, subscriberName );
+		requestParams.add( CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_ADDRESS, subscriberAddress );
+		requestParams.add( CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_PORT, String.valueOf( subscriberPort ) );
+		
 		final UriComponents unsubscribeUri = Utilities.createURI( 
 				getUriScheme(), 
 				uri.getAddress(), 
 				uri.getPort(), 
-				uri.getPath(),
-				eventType,
-				subscriberName,
-				subscriberAddress,
-				String.valueOf( subscriberPort ) );
+				requestParams,
+				uri.getPath());
 		
 		httpService.sendRequest( unsubscribeUri, HttpMethod.DELETE, Void.class );
 	}
@@ -490,6 +495,25 @@ public class ArrowheadService {
 		}
 		
 		httpService.sendRequest( Utilities.createURI( getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath() ), HttpMethod.POST, Void.class, request );
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Get the serverCN from arrowheadContext
+	 * 
+	 * @returns Arrowhead Client-System ServerCN
+	*/
+	public String getServerCN() {
+
+		try {
+			
+			return (String) arrowheadContext.get( CommonConstants.SERVER_COMMON_NAME );
+
+		} catch (Exception ex) {
+
+			logger.info( CommonConstants.SERVER_COMMON_NAME + "is not in arrowheadContext");
+			return null;
+		}
 	}
 	
 	//=================================================================================================
