@@ -453,7 +453,7 @@ public class ArrowheadService {
 
 		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_UNSUBSCRIBE_SERVICE);
 		if (uri == null) {
-			logger.debug("Unsubscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_SUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
+			logger.debug("Unsubscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_UNSUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
 			return;
 		}
 		
@@ -501,17 +501,10 @@ public class ArrowheadService {
 	 * 
 	 * @returns Arrowhead Client-System ServerCN
 	*/
-	public String getServerCN() {
+	public String getServerCN(){
 
-		try {
-			
-			return (String) arrowheadContext.get( CommonConstants.SERVER_COMMON_NAME );
+		return (String) arrowheadContext.get( CommonConstants.SERVER_COMMON_NAME );
 
-		} catch (Exception ex) {
-
-			logger.info( CommonConstants.SERVER_COMMON_NAME + "is not in arrowheadContext");
-			return null;
-		}
 	}
 	
 	//=================================================================================================
