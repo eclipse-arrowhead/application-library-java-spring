@@ -428,7 +428,7 @@ public class ArrowheadService {
 			return;
 		}
 		
-		httpService.sendRequest( Utilities.createURI( getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath() ), HttpMethod.POST, Void.class, request );
+		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -458,10 +458,10 @@ public class ArrowheadService {
 		}
 		
 		final MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
-		requestParams.add( CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_EVENT_TYPE, eventType);
-		requestParams.add( CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_SYSTEM_NAME, subscriberName );
-		requestParams.add( CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_ADDRESS, subscriberAddress );
-		requestParams.add( CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_PORT, String.valueOf( subscriberPort ) );
+		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_EVENT_TYPE, eventType);
+		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_SYSTEM_NAME, subscriberName);
+		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_ADDRESS, subscriberAddress);
+		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_PORT, String.valueOf(subscriberPort));
 		
 		final UriComponents unsubscribeUri = Utilities.createURI( 
 				getUriScheme(), 
@@ -470,7 +470,7 @@ public class ArrowheadService {
 				requestParams,
 				uri.getPath());
 		
-		httpService.sendRequest( unsubscribeUri, HttpMethod.DELETE, Void.class );
+		httpService.sendRequest(unsubscribeUri, HttpMethod.DELETE, Void.class);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -492,7 +492,7 @@ public class ArrowheadService {
 			return;
 		}
 		
-		httpService.sendRequest( Utilities.createURI( getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath() ), HttpMethod.POST, Void.class, request );
+		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -503,7 +503,7 @@ public class ArrowheadService {
 	*/
 	public String getServerCN(){
 
-		return (String) arrowheadContext.get( CommonConstants.SERVER_COMMON_NAME );
+		return (String) arrowheadContext.get(CommonConstants.SERVER_COMMON_NAME);
 
 	}
 	
