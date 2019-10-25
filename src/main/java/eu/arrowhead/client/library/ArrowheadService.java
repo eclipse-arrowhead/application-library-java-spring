@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import eu.arrowhead.client.library.util.ClientCommonConstants;
 import eu.arrowhead.client.library.util.CoreServiceUri;
@@ -411,6 +412,44 @@ public class ArrowheadService {
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
+	 * Sends a http(s) request with the specified service reachability details.
+	 * 
+	 * @param responseType which represents the expected response body.
+	 * @param httpMethod HttpMethod enum which represents the method how the service is available.
+	 * @param uriComponents UriComponents object which represents the URI where the service is available.
+	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.  
+	 * @param payload (nullable) Object type which represents the required payload of the http(s) request if any necessary.
+	 * @return the response received from the provider 
+	 * 
+	 * @throws InvalidParameterException when service URL can't be assembled.
+	 * @throws AuthException when ssl context or access control related issue happened.
+	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
+	 * @throws UnavailableServerException when the specified server is not available.
+	 */
+	public <T> T consumeServiceHTTP(final Class<T> responseType, final HttpMethod httpMethod, final UriComponents uriComponents, final String token, final Object payload) {
+		UriComponents uri = uriComponents;
+		if (responseType == null) {
+			throw new InvalidParameterException("responseType cannot be null.");
+		}
+		if (httpMethod == null) {
+			throw new InvalidParameterException("httpMethod cannot be null.");
+		}
+		if (uri == null) {
+			throw new InvalidParameterException("uriComponents cannot be null.");
+		}
+		
+		if (!Utilities.isEmpty(token)) {
+			final String uriToExpand = uri.toUriString();
+			final UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(uriToExpand);
+			uri = builder.queryParam(CommonConstants.REQUEST_PARAM_TOKEN, token).build();
+		} 
+		
+		final ResponseEntity<T> response = httpService.sendRequest(uri, httpMethod, responseType, payload);
+		return response.getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
 	 * Sends a http(s) 'subscription' request to Event Handler Core System.
 	 * 
 	 * @param request SubscriptionRequestDTO which represents the required payload of the http(s) request
@@ -421,7 +460,6 @@ public class ArrowheadService {
 	 * @throws UnavailableServerException when Event Handler Core System is not available
 	 */
 	public void subscribeToEventHandler(final SubscriptionRequestDTO request) {
-
 		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_SUBSCRIBE_SERVICE);
 		if (uri == null) {
 			logger.debug("Subscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_SUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
@@ -445,12 +483,7 @@ public class ArrowheadService {
 	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
 	 * @throws UnavailableServerException when Event Handler Core System is not available
 	 */
-	public void unsubscribeFromEventHandler(
-			final String eventType,
-			final String subscriberName,
-			final String subscriberAddress,
-			final int subscriberPort ) {
-
+	public void unsubscribeFromEventHandler(final String eventType, final String subscriberName, final String subscriberAddress, final int subscriberPort ) {
 		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_UNSUBSCRIBE_SERVICE);
 		if (uri == null) {
 			logger.debug("Unsubscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_UNSUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
@@ -463,13 +496,7 @@ public class ArrowheadService {
 		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_ADDRESS, subscriberAddress);
 		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_PORT, String.valueOf(subscriberPort));
 		
-		final UriComponents unsubscribeUri = Utilities.createURI( 
-				getUriScheme(), 
-				uri.getAddress(), 
-				uri.getPort(), 
-				requestParams,
-				uri.getPath());
-		
+		final UriComponents unsubscribeUri = Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), requestParams, uri.getPath());		
 		httpService.sendRequest(unsubscribeUri, HttpMethod.DELETE, Void.class);
 	}
 	
@@ -485,7 +512,6 @@ public class ArrowheadService {
 	 * @throws UnavailableServerException when Event Handler Core System is not available
 	 */
 	public void publishToEventHandler(final EventPublishRequestDTO request) {
-
 		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_PUBLISH_SERVICE);
 		if (uri == null) {
 			logger.debug("Publishing couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_PUBLISH_SERVICE.name() + " not known by Arrowhead Context");
@@ -502,9 +528,7 @@ public class ArrowheadService {
 	 * @returns Arrowhead Client-System ServerCN
 	*/
 	public String getServerCN(){
-
 		return (String) arrowheadContext.get(CommonConstants.SERVER_COMMON_NAME);
-
 	}
 	
 	//=================================================================================================
