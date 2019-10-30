@@ -1,6 +1,8 @@
 package eu.arrowhead.client.library.util;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 import eu.arrowhead.client.library.ArrowheadService;
@@ -8,19 +10,12 @@ import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.http.HttpService;
 
 @Component
-public class ArrowheadBeans {
+public class ArrowheadBeans implements ApplicationContextAware {
 
 	//=================================================================================================
 	// members
 	
-	@Autowired
-	private static ArrowheadService arrowheadService;
-	
-	@Autowired
-	private static SSLProperties sslProperties;
-	
-	@Autowired
-	private static HttpService httpService;
+	private static ApplicationContext appContext;
 	
 	//=================================================================================================
 	// methods
@@ -30,7 +25,7 @@ public class ArrowheadBeans {
 	 * @return the ArrowheadService spring managed bean
 	 */
 	public static ArrowheadService getArrowheadService() {
-		return arrowheadService;
+		return appContext.getBean(ArrowheadService.class);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -38,7 +33,7 @@ public class ArrowheadBeans {
 	 * @return the SSLProperties spring managed bean
 	 */
 	public static SSLProperties getSSLProperties() {
-		return sslProperties;
+		return appContext.getBean(SSLProperties.class);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -46,6 +41,13 @@ public class ArrowheadBeans {
 	 * @return the HttpService spring managed bean
 	 */
 	public static HttpService getHttpService() {
-		return httpService;
+		return appContext.getBean(HttpService.class);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	@SuppressWarnings("static-access")
+	@Override
+	public void setApplicationContext(final ApplicationContext ac) throws BeansException {
+		this.appContext = ac;	
 	}
 }
