@@ -26,7 +26,7 @@
 	<repositories>
 		<repository>
 			<id>arrowhead-client</id>
-			<url>https://github.com/arrowhead-f/client-library-java-spring/raw/add_choreographer_shared_dtos/client-mvn-repo</url>
+			<url>https://github.com/arrowhead-f/client-library-java-spring/raw/master/client-mvn-repo</url>
 		</repository>
 	</repositories>
 	
