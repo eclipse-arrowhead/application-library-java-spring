@@ -11,6 +11,7 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 
+import eu.arrowhead.common.dto.shared.ChoreographerSessionRunningStepDataDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -518,6 +519,27 @@ public class ArrowheadService {
 			return;
 		}
 		
+		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'notify' request to the Choreographer Core System including the sessionId and the runningStepId.
+	 *
+	 * @param request ChoreographerSessionRunningStepDataDTO which represents the required payload of the http(s) request.
+	 * @throws AuthException when you are not authorized by the Choreographer Core System.
+	 * @throws BadPayloadException when the payload couldn't be validated by the Choreographer Core System.
+	 * @throws InvalidParameterException when the payload content couldn't be validated by the Choreographer Core System.
+	 * @throws ArrowheadException when internal server error happened at the Choreographer Core System.
+	 * @throws UnavailableServerException when the Choreographer Core System is not available.
+	 */
+	public void notifyChoreographerStepDone(final ChoreographerSessionRunningStepDataDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.CHOREOGRAPHER_SERVICE);
+		if (uri == null) {
+			logger.debug("Couldn't notify Choreographer because " + CoreSystemService.CHOREOGRAPHER_SERVICE.name() + " is not included in Arrowhead Context.");
+			return;
+		}
+
 		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
 	}
 	
