@@ -78,6 +78,7 @@ public class ArrowheadService {
 	private HttpService httpService;
 	
 	private final static String INTERFACE_SECURE_FLAG = "SECURE";
+	private final static String INTERFACE_INSECURE_FLAG = "INSECURE";
 	
 	private final Logger logger = LogManager.getLogger(ArrowheadService.class);
 	
@@ -550,10 +551,16 @@ public class ArrowheadService {
 		final String[] splitInterf = interfaceName.split("-");
 		final String protocolStr = splitInterf[0];
 		if (!protocolStr.equalsIgnoreCase(CommonConstants.HTTP) && !protocolStr.equalsIgnoreCase(CommonConstants.HTTPS)) {
+			// Currently only HTTP(S) is supported
 			throw new InvalidParameterException("Invalid interfaceName: protocol should be 'http' or 'https'.");
 		}
 		
 		final boolean isSecure = INTERFACE_SECURE_FLAG.equalsIgnoreCase(splitInterf[1]);
+		final boolean isInsecure = INTERFACE_INSECURE_FLAG.equalsIgnoreCase(splitInterf[1]);
+		if (!isSecure && !isInsecure) {
+			return getUriScheme();
+		}
+		
 		return isSecure ? CommonConstants.HTTPS : CommonConstants.HTTP;
 	}
 	
