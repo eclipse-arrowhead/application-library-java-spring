@@ -10,7 +10,7 @@
 	
 	<groupId>eu.arrowhead</groupId>	
 	<artifactId>client-library</artifactId>
-	<version>4.1.3.7</version>
+	<version>4.1.3.8</version>
 	<packaging>jar</packaging>
 	<name>client-library-java-spring</name>
 	<description>Arrowhead Client Library using Spring Boot</description>
@@ -23,19 +23,20 @@
 	   </license>
   	</licenses>
 	
-	<repositories>
+	<distributionManagement>
 		<repository>
-			<id>arrowhead-client</id>
-			<url>https://github.com/arrowhead-f/client-library-java-spring/raw/master/client-mvn-repo</url>
+			<id>github</id>
+			<name>GitHub OWNER Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/arrowhead-f/client-library-java-spring</url>
 		</repository>
-	</repositories>
+	</distributionManagement>
 	
 	<dependencies>
 	
 		<dependency>
 			<groupId>eu.arrowhead</groupId>
 			<artifactId>core-client-skeleton</artifactId>
-			<version>4.1.3.3</version>
+			<version>4.1.3.6</version>
 		</dependency>
 	
 		<dependency>
