@@ -155,6 +155,7 @@ public class ServiceRegistry {
 
         systemRequestDTO.setAddress(this.clientSystemAddress);
 
+        // registration attempts with address 0.0.0.0 will be mapped to all available addresses
         if (this.clientSystemAddress.equals("0.0.0.0")) {
             for (InetAddress addr : Miscellaneous.getInetAddressesFromNics()) {
                 systemRequestDTO.setAddress(addr.getHostAddress());
