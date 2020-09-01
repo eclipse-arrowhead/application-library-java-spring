@@ -393,15 +393,22 @@ public class ArrowheadService {
 			throw new InvalidParameterException("interfaceName cannot be null or blank.");
 		}
 		
+		String[] validatedQueryParams;
+		if (queryParams == null) {
+			validatedQueryParams = new String[0];
+		} else {
+			validatedQueryParams = queryParams;
+		}
+		
 		UriComponents uri;
 		if(!Utilities.isEmpty(token)) {
 			final List<String> query = new ArrayList<>();
-			query.addAll(Arrays.asList(queryParams));
+			query.addAll(Arrays.asList(validatedQueryParams));
 			query.add(CommonConstants.REQUEST_PARAM_TOKEN);
 			query.add(token);
 			uri = Utilities.createURI(getUriSchemeFromInterfaceName(interfaceName), address, port, serviceUri, query.toArray(new String[query.size()]));
 		} else {
-			uri = Utilities.createURI(getUriSchemeFromInterfaceName(interfaceName), address, port, serviceUri, queryParams);
+			uri = Utilities.createURI(getUriSchemeFromInterfaceName(interfaceName), address, port, serviceUri, validatedQueryParams);
 		}
 		
 		final ResponseEntity<T> response = httpService.sendRequest(uri, httpMethod, responseType, payload);
