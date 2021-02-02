@@ -11,6 +11,8 @@ import java.util.Map;
 
 import javax.annotation.Resource;
 
+import eu.arrowhead.common.dto.shared.ChoreographerExecutorRequestDTO;
+import eu.arrowhead.common.dto.shared.ChoreographerExecutorResponseDTO;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +65,7 @@ public class ArrowheadService {
 	private int clientSystemPort;
 	
 	@Value(CommonConstants.$SERVICE_REGISTRY_ADDRESS_WD)
-	private String serviceReqistryAddress;
+	private String serviceRegistryAddress;
 	
 	@Value(CommonConstants.$SERVICE_REGISTRY_PORT_WD)
 	private int serviceRegistryPort;
@@ -151,7 +153,7 @@ public class ArrowheadService {
 		try {
 			
 			if (coreSystem == CoreSystem.SERVICE_REGISTRY) {
-				address = serviceReqistryAddress;
+				address = serviceRegistryAddress;
 				port = serviceRegistryPort;
 				coreUri = CommonConstants.SERVICE_REGISTRY_URI;
 				
@@ -197,7 +199,7 @@ public class ArrowheadService {
 	 */
 	public ServiceRegistryResponseDTO registerServiceToServiceRegistry(final ServiceRegistryRequestDTO request) {
 		final String registerUriStr = CommonConstants.SERVICE_REGISTRY_URI + CommonConstants.OP_SERVICE_REGISTRY_REGISTER_URI;
-		final UriComponents registerUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, registerUriStr);
+		final UriComponents registerUri = Utilities.createURI(getUriScheme(), serviceRegistryAddress, serviceRegistryPort, registerUriStr);
 		
 		return httpService.sendRequest(registerUri, HttpMethod.POST, ServiceRegistryResponseDTO.class, request).getBody();
 	}
@@ -216,7 +218,7 @@ public class ArrowheadService {
 	 */
 	public ServiceRegistryResponseDTO forceRegisterServiceToServiceRegistry(final ServiceRegistryRequestDTO request) {
 		final String registerUriStr = CommonConstants.SERVICE_REGISTRY_URI + CommonConstants.OP_SERVICE_REGISTRY_REGISTER_URI;
-		final UriComponents registerUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, registerUriStr);
+		final UriComponents registerUri = Utilities.createURI(getUriScheme(), serviceRegistryAddress, serviceRegistryPort, registerUriStr);
 		
 		try {			
 			return httpService.sendRequest(registerUri, HttpMethod.POST, ServiceRegistryResponseDTO.class, request).getBody();
@@ -244,7 +246,7 @@ public class ArrowheadService {
 		queryMap.put(CommonConstants.OP_SERVICE_REGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_ADDRESS, List.of(clientSystemAddress));
 		queryMap.put(CommonConstants.OP_SERVICE_REGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_PORT, List.of(String.valueOf(clientSystemPort)));
 		queryMap.put(CommonConstants.OP_SERVICE_REGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_DEFINITION, List.of(serviceDefinition));
-		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, queryMap, unregisterUriStr);
+		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), serviceRegistryAddress, serviceRegistryPort, queryMap, unregisterUriStr);
 		
 		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
 	}
@@ -525,6 +527,39 @@ public class ArrowheadService {
 		
 		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
 	}
+
+	public ChoreographerExecutorResponseDTO registerExecutor(final ChoreographerExecutorRequestDTO request) {
+		final String registerUriStr = CommonConstants.CHOREOGRAPHER_URI + CommonConstants.OP_CHOREOGRAPHER_EXECUTOR_REGISTER;
+		final CoreServiceUri choreographerURI = getCoreServiceUri(CoreSystemService.CHOREOGRAPHER_SERVICE);
+		final UriComponents registerExecutorUri = Utilities.createURI(getUriScheme(), choreographerURI.getAddress(), choreographerURI.getPort(), registerUriStr);
+
+		return httpService.sendRequest(registerExecutorUri, HttpMethod.POST, ChoreographerExecutorResponseDTO.class, request).getBody();
+	}
+
+	public ChoreographerExecutorResponseDTO forceRegisterExecutor(final ChoreographerExecutorRequestDTO request) {
+		final String registerUriStr = CommonConstants.CHOREOGRAPHER_URI + CommonConstants.OP_CHOREOGRAPHER_EXECUTOR_REGISTER;
+		final CoreServiceUri choreographerURI = getCoreServiceUri(CoreSystemService.CHOREOGRAPHER_SERVICE);
+		final UriComponents registerExecutorUri = Utilities.createURI(getUriScheme(), choreographerURI.getAddress(), choreographerURI.getPort(), registerUriStr);
+
+		try {
+			return httpService.sendRequest(registerExecutorUri, HttpMethod.POST, ChoreographerExecutorResponseDTO.class, request).getBody();
+		} catch (final InvalidParameterException ex) {
+			unregisterExecutor(request.getAddress(), request.getPort(), request.getBaseUri());
+			return httpService.sendRequest(registerExecutorUri, HttpMethod.POST, ChoreographerExecutorResponseDTO.class, request).getBody();
+		}
+	}
+
+	public void unregisterExecutor(final String executorAddress, final int executorPort, final String executorBaseUri) {
+		final String unregisterUriStr = CommonConstants.CHOREOGRAPHER_URI + CommonConstants.OP_CHOREOGRAPHER_EXECUTOR_UNREGISTER;
+		final CoreServiceUri choreographerURI = getCoreServiceUri(CoreSystemService.CHOREOGRAPHER_SERVICE);
+		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(3);
+		queryMap.put(CommonConstants.OP_CHOREOGRAPHER_EXECUTOR_UNREGISTER_REQUEST_PARAM_ADDRESS, List.of(executorAddress));
+		queryMap.put(CommonConstants.OP_CHOREOGRAPHER_EXECUTOR_UNREGISTER_REQUEST_PARAM_PORT, List.of(String.valueOf(executorPort)));
+		queryMap.put(CommonConstants.OP_CHOREOGRAPHER_EXECUTOR_UNREGISTER_REQUEST_PARAM_BASE_URI, List.of(executorBaseUri));
+		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), choreographerURI.getAddress(), choreographerURI.getPort(), queryMap, unregisterUriStr);
+
+		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
+	}
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
@@ -544,7 +579,7 @@ public class ArrowheadService {
 		final ServiceQueryFormDTO request = new ServiceQueryFormDTO();
 		request.setServiceDefinitionRequirement(coreService.getServiceDefinition());
 		
-		return httpService.sendRequest(Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, CommonConstants.SERVICE_REGISTRY_URI + CommonConstants.OP_SERVICE_REGISTRY_QUERY_URI),
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), serviceRegistryAddress, serviceRegistryPort, CommonConstants.SERVICE_REGISTRY_URI + CommonConstants.OP_SERVICE_REGISTRY_QUERY_URI),
 									   HttpMethod.POST, ServiceQueryResultDTO.class, request);
 	}
 	
