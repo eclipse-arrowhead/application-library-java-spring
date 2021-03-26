@@ -461,14 +461,12 @@ public class ArrowheadService {
 	/**
 	 * Make WS connection with the specified service reachability details.
 	 *
-	 * @param responseType which represents the expected response body.
-	 * @param httpMethod HttpMethod enum which represents the method how the service is available.
+	 * @param handler WebSocket handler to use for message exchanges
 	 * @param address String value which represents the host where the service is available.
 	 * @param port int value which represents the port where the service is available
 	 * @param serviceUri String value which represents the URI where the service is available.
 	 * @param interfaceName String value which represents the name of the interface used for the communication. Usable interfaces could be received in orchestration response.
 	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
-	 * @param payload (nullable) Object type which represents the required payload of the http(s) request if any necessary.
 	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
 	 * @return the response received from the provider
 	 *
@@ -479,7 +477,6 @@ public class ArrowheadService {
 	 */
 	public WebSocketConnectionManager connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri, final String interfaceName,
 			final String token, final String... queryParams) {
-		System.out.println("Connecting...");
 
 		if (Utilities.isEmpty(address)) {
 			throw new InvalidParameterException("address cannot be null or blank.");
@@ -518,7 +515,9 @@ public class ArrowheadService {
 	/**
 	 * Make WSS connection with the specified service reachability details.
 	 *
-	 * @param responseType which represents the expected response body.
+	 * @param trustStore The trusted certificates
+	 * @param keyStore The certificate
+	 * @param password The passwords
 	 * @param httpMethod HttpMethod enum which represents the method how the service is available.
 	 * @param address String value which represents the host where the service is available.
 	 * @param port int value which represents the port where the service is available
