@@ -22,6 +22,15 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.socket.client.WebSocketConnectionManager;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.WebSocketHandler;
+
+import org.apache.http.ssl.TrustStrategy;
+import javax.net.ssl.SSLContext;
+import org.apache.http.ssl.SSLContexts;
+import java.security.cert.X509Certificate;
+import java.security.KeyStore;
 
 import eu.arrowhead.client.library.util.ClientCommonConstants;
 import eu.arrowhead.client.library.util.CoreServiceUri;
@@ -450,6 +459,134 @@ public class ArrowheadService {
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
+	 * Make WS connection with the specified service reachability details.
+	 *
+	 * @param responseType which represents the expected response body.
+	 * @param httpMethod HttpMethod enum which represents the method how the service is available.
+	 * @param address String value which represents the host where the service is available.
+	 * @param port int value which represents the port where the service is available
+	 * @param serviceUri String value which represents the URI where the service is available.
+	 * @param interfaceName String value which represents the name of the interface used for the communication. Usable interfaces could be received in orchestration response.
+	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
+	 * @param payload (nullable) Object type which represents the required payload of the http(s) request if any necessary.
+	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
+	 * @return the response received from the provider
+	 *
+	 * @throws InvalidParameterException when service URL can't be assembled.
+	 * @throws AuthException when ssl context or access control related issue happened.
+	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
+	 * @throws UnavailableServerException when the specified server is not available.
+	 */
+	public WebSocketConnectionManager connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri, final String interfaceName,
+			final String token, final String... queryParams) {
+		System.out.println("Connecting...");
+
+		if (Utilities.isEmpty(address)) {
+			throw new InvalidParameterException("address cannot be null or blank.");
+		}
+		if (Utilities.isEmpty(serviceUri)) {
+			throw new InvalidParameterException("serviceUri cannot be null or blank.");
+		}
+		if (Utilities.isEmpty(interfaceName)) {
+			throw new InvalidParameterException("interfaceName cannot be null or blank.");
+		}
+
+		String[] validatedQueryParams;
+		if (queryParams == null) {
+			validatedQueryParams = new String[0];
+		} else {
+			validatedQueryParams = queryParams;
+		}
+
+		UriComponents uri;
+		if(!Utilities.isEmpty(token)) {
+			final List<String> query = new ArrayList<>();
+			query.addAll(Arrays.asList(validatedQueryParams));
+			query.add(CommonConstants.REQUEST_PARAM_TOKEN);
+			query.add(token);
+			uri = Utilities.createURI("ws", address, port, serviceUri, query.toArray(new String[query.size()]));
+		} else {
+			uri = Utilities.createURI("ws", address, port, serviceUri, validatedQueryParams);
+		}
+
+		WebSocketConnectionManager manager = new WebSocketConnectionManager(new StandardWebSocketClient(), handler, uri.toString() );
+		return manager;
+	}
+
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Make WSS connection with the specified service reachability details.
+	 *
+	 * @param responseType which represents the expected response body.
+	 * @param httpMethod HttpMethod enum which represents the method how the service is available.
+	 * @param address String value which represents the host where the service is available.
+	 * @param port int value which represents the port where the service is available
+	 * @param serviceUri String value which represents the URI where the service is available.
+	 * @param interfaceName String value which represents the name of the interface used for the communication. Usable interfaces could be received in orchestration response.
+	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
+	 * @param payload (nullable) Object type which represents the required payload of the http(s) request if any necessary.
+	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
+	 * @return the response received from the provider
+	 *
+	 * @throws InvalidParameterException when service URL can't be assembled.
+	 * @throws AuthException when ssl context or access control related issue happened.
+	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
+	 * @throws UnavailableServerException when the specified server is not available.
+	 */
+	public WebSocketConnectionManager connnectServiceWSS(final KeyStore trustStore, final KeyStore keyStore, final String password, final WebSocketHandler handler, final String address, final int port, final String serviceUri, final String interfaceName,
+			final String token, final String... queryParams) {
+
+		if (Utilities.isEmpty(address)) {
+			throw new InvalidParameterException("address cannot be null or blank.");
+		}
+		if (Utilities.isEmpty(serviceUri)) {
+			throw new InvalidParameterException("serviceUri cannot be null or blank.");
+		}
+		if (Utilities.isEmpty(interfaceName)) {
+			throw new InvalidParameterException("interfaceName cannot be null or blank.");
+		}
+
+		/* Handle query parameters */
+		String[] validatedQueryParams;
+		if (queryParams == null) {
+			validatedQueryParams = new String[0];
+		} else {
+			validatedQueryParams = queryParams;
+		}
+
+		/* prepare the URI */
+		UriComponents uri;
+		if(!Utilities.isEmpty(token)) {
+			final List<String> query = new ArrayList<>();
+			query.addAll(Arrays.asList(validatedQueryParams));
+			query.add(CommonConstants.REQUEST_PARAM_TOKEN);
+			query.add(token);
+			uri = Utilities.createURI("wss", address, port, serviceUri, query.toArray(new String[query.size()]));
+		} else {
+			uri = Utilities.createURI("wss", address, port, serviceUri, validatedQueryParams);
+		}
+
+		/* try to establish WSS connection */
+		try {
+			final TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
+			final SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore, acceptingTrustStrategy).loadKeyMaterial(keyStore, password.toCharArray()).build();
+
+			final StandardWebSocketClient wsClient = new StandardWebSocketClient();
+			wsClient.getUserProperties().clear();
+			wsClient.getUserProperties().put("org.apache.tomcat.websocket.SSL_CONTEXT", sslContext);
+
+			final WebSocketConnectionManager manager = new WebSocketConnectionManager(wsClient, handler, uri.toString());
+
+			return manager;
+		} catch(Exception e) {
+			logger.debug("WSS connection failed: " + e);
+			return null;
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
 	 * Sends a http(s) 'subscription' request to Event Handler Core System.
 	 * 
 	 * @param request SubscriptionRequestDTO which represents the required payload of the http(s) request
@@ -546,6 +683,12 @@ public class ArrowheadService {
 	//-------------------------------------------------------------------------------------------------
 	private String getUriScheme() {
 		return sslProperties.isSslEnabled() ? CommonConstants.HTTPS : CommonConstants.HTTP;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private String getUriSchemeWS() {
+		//return sslProperties.isSslEnabled() ? CommonConstants.WSS : CommonConstants.WS;
+		return sslProperties.isSslEnabled() ? "wss" : "ws";
 	}
 	
 	//-------------------------------------------------------------------------------------------------
