@@ -465,17 +465,16 @@ public class ArrowheadService {
 	 * @param address String value which represents the host where the service is available.
 	 * @param port int value which represents the port where the service is available
 	 * @param serviceUri String value which represents the URI where the service is available.
-	 * @param interfaceName String value which represents the name of the interface used for the communication. Usable interfaces could be received in orchestration response.
 	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
 	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
-	 * @return the response received from the provider
+	 * @return A WebSocket manager that is used for all full-duplex communication
 	 *
 	 * @throws InvalidParameterException when service URL can't be assembled.
 	 * @throws AuthException when ssl context or access control related issue happened.
 	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
 	 * @throws UnavailableServerException when the specified server is not available.
 	 */
-	public WebSocketConnectionManager connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri, final String interfaceName,
+	public WebSocketConnectionManager connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri, 
 			final String token, final String... queryParams) {
 
 		if (Utilities.isEmpty(address)) {
@@ -483,9 +482,6 @@ public class ArrowheadService {
 		}
 		if (Utilities.isEmpty(serviceUri)) {
 			throw new InvalidParameterException("serviceUri cannot be null or blank.");
-		}
-		if (Utilities.isEmpty(interfaceName)) {
-			throw new InvalidParameterException("interfaceName cannot be null or blank.");
 		}
 
 		String[] validatedQueryParams;
@@ -506,8 +502,7 @@ public class ArrowheadService {
 			uri = Utilities.createURI("ws", address, port, serviceUri, validatedQueryParams);
 		}
 
-		WebSocketConnectionManager manager = new WebSocketConnectionManager(new StandardWebSocketClient(), handler, uri.toString() );
-		return manager;
+		return new WebSocketConnectionManager(new StandardWebSocketClient(), handler, uri.toString() );
 	}
 
 
@@ -518,22 +513,20 @@ public class ArrowheadService {
 	 * @param trustStore The trusted certificates
 	 * @param keyStore The certificate
 	 * @param password The passwords
-	 * @param httpMethod HttpMethod enum which represents the method how the service is available.
+	 * @param handler WebSocket handler to use for message exchanges
 	 * @param address String value which represents the host where the service is available.
 	 * @param port int value which represents the port where the service is available
 	 * @param serviceUri String value which represents the URI where the service is available.
-	 * @param interfaceName String value which represents the name of the interface used for the communication. Usable interfaces could be received in orchestration response.
 	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
-	 * @param payload (nullable) Object type which represents the required payload of the http(s) request if any necessary.
 	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
-	 * @return the response received from the provider
+	 * @return A WebSocket manager that is used for all full-duplex communication
 	 *
 	 * @throws InvalidParameterException when service URL can't be assembled.
 	 * @throws AuthException when ssl context or access control related issue happened.
 	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
 	 * @throws UnavailableServerException when the specified server is not available.
 	 */
-	public WebSocketConnectionManager connnectServiceWSS(final KeyStore trustStore, final KeyStore keyStore, final String password, final WebSocketHandler handler, final String address, final int port, final String serviceUri, final String interfaceName,
+	public WebSocketConnectionManager connnectServiceWSS(final KeyStore trustStore, final KeyStore keyStore, final String password, final WebSocketHandler handler, final String address, final int port, final String serviceUri,
 			final String token, final String... queryParams) {
 
 		if (Utilities.isEmpty(address)) {
@@ -541,9 +534,6 @@ public class ArrowheadService {
 		}
 		if (Utilities.isEmpty(serviceUri)) {
 			throw new InvalidParameterException("serviceUri cannot be null or blank.");
-		}
-		if (Utilities.isEmpty(interfaceName)) {
-			throw new InvalidParameterException("interfaceName cannot be null or blank.");
 		}
 
 		/* Handle query parameters */
@@ -573,14 +563,12 @@ public class ArrowheadService {
 
 			final StandardWebSocketClient wsClient = new StandardWebSocketClient();
 			wsClient.getUserProperties().clear();
-			wsClient.getUserProperties().put("org.apache.tomcat.websocket.SSL_CONTEXT", sslContext);
+			wsClient.getUserProperties().put(ClientCommonConstants.TOMCAT_WS_SSL_CONTEXT, sslContext);
 
-			final WebSocketConnectionManager manager = new WebSocketConnectionManager(wsClient, handler, uri.toString());
-
-			return manager;
+			return new WebSocketConnectionManager(wsClient, handler, uri.toString());
 		} catch(Exception e) {
 			logger.debug("WSS connection failed: " + e);
-			return null;
+			throw new ArrowheadException("WSS connection failed: " + e.getMessage());
 		}
 	}
 
