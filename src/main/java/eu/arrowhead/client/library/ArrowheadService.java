@@ -522,9 +522,7 @@ public class ArrowheadService {
 	 * @return A WebSocket manager that is used for all full-duplex communication
 	 *
 	 * @throws InvalidParameterException when service URL can't be assembled.
-	 * @throws AuthException when ssl context or access control related issue happened.
 	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
-	 * @throws UnavailableServerException when the specified server is not available.
 	 */
 	public WebSocketConnectionManager connnectServiceWSS(final KeyStore trustStore, final KeyStore keyStore, final String password, final WebSocketHandler handler, final String address, final int port, final String serviceUri,
 			final String token, final String... queryParams) {
