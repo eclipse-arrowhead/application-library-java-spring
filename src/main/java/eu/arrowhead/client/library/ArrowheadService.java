@@ -92,6 +92,9 @@ public class ArrowheadService {
 	@Autowired
 	private HttpService httpService;
 	
+	private final static String INTERFACE_SECURE_FLAG = "SECURE";
+	private final static String INTERFACE_INSECURE_FLAG = "INSECURE";
+	
 	private final Logger logger = LogManager.getLogger(ArrowheadService.class);
 	
 	//=================================================================================================
@@ -405,20 +408,22 @@ public class ArrowheadService {
 			throw new InvalidParameterException("interfaceName cannot be null or blank.");
 		}
 		
-		final String protocolStr = interfaceName.split("-")[0];
-		if (!protocolStr.equalsIgnoreCase(CommonConstants.HTTP) && !protocolStr.equalsIgnoreCase(CommonConstants.HTTPS)) {
-			throw new InvalidParameterException("Invalid interfaceName: protocol should be 'http' or 'https'.");
+		String[] validatedQueryParams;
+		if (queryParams == null) {
+			validatedQueryParams = new String[0];
+		} else {
+			validatedQueryParams = queryParams;
 		}
 		
 		UriComponents uri;
 		if(!Utilities.isEmpty(token)) {
 			final List<String> query = new ArrayList<>();
-			query.addAll(Arrays.asList(queryParams));
+			query.addAll(Arrays.asList(validatedQueryParams));
 			query.add(CommonConstants.REQUEST_PARAM_TOKEN);
 			query.add(token);
-			uri = Utilities.createURI(protocolStr, address, port, serviceUri, query.toArray(new String[query.size()]));
+			uri = Utilities.createURI(getUriSchemeFromInterfaceName(interfaceName), address, port, serviceUri, query.toArray(new String[query.size()]));
 		} else {
-			uri = Utilities.createURI(protocolStr, address, port, serviceUri, queryParams);
+			uri = Utilities.createURI(getUriSchemeFromInterfaceName(interfaceName), address, port, serviceUri, validatedQueryParams);
 		}
 		
 		final ResponseEntity<T> response = httpService.sendRequest(uri, httpMethod, responseType, payload);
@@ -640,6 +645,24 @@ public class ArrowheadService {
 	private String getUriSchemeWS() {
 		//return sslProperties.isSslEnabled() ? CommonConstants.WSS : CommonConstants.WS;
 		return sslProperties.isSslEnabled() ? "wss" : "ws";
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	private String getUriSchemeFromInterfaceName(final String interfaceName) {
+		final String[] splitInterf = interfaceName.split("-");
+		final String protocolStr = splitInterf[0];
+		if (!protocolStr.equalsIgnoreCase(CommonConstants.HTTP) && !protocolStr.equalsIgnoreCase(CommonConstants.HTTPS)) {
+			// Currently only HTTP(S) is supported
+			throw new InvalidParameterException("Invalid interfaceName: protocol should be 'http' or 'https'.");
+		}
+		
+		final boolean isSecure = INTERFACE_SECURE_FLAG.equalsIgnoreCase(splitInterf[1]);
+		final boolean isInsecure = INTERFACE_INSECURE_FLAG.equalsIgnoreCase(splitInterf[1]);
+		if (!isSecure && !isInsecure) {
+			return getUriScheme();
+		}
+		
+		return isSecure ? CommonConstants.HTTPS : CommonConstants.HTTP;
 	}
 	
 	//-------------------------------------------------------------------------------------------------

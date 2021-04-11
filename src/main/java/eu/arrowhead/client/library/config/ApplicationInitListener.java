@@ -116,7 +116,7 @@ public abstract class ApplicationInitListener {
 	//-------------------------------------------------------------------------------------------------
 	private void checkServerCertificate(final KeyStore keyStore, final ApplicationContext appContext) {
 		logger.debug("checkServerCertificate started...");
-		final X509Certificate serverCertificate = Utilities.getFirstCertFromKeyStore(keyStore);
+		final X509Certificate serverCertificate = Utilities.getSystemCertFromKeyStore(keyStore);
 		final String serverCN = Utilities.getCertCNFromSubject(serverCertificate.getSubjectDN().getName());
 		if (!Utilities.isKeyStoreCNArrowheadValid(serverCN)) {
 			logger.info("Client CN ({}) is not compliant with the Arrowhead certificate structure, since it does not have 5 parts, or does not end with \"arrowhead.eu\".", serverCN);
@@ -135,7 +135,7 @@ public abstract class ApplicationInitListener {
 		@SuppressWarnings("unchecked")
 		final Map<String,Object> context = appContext.getBean(CommonConstants.ARROWHEAD_CONTEXT, Map.class);
 		
-		context.put(CommonConstants.SERVER_PUBLIC_KEY, Utilities.getFirstCertFromKeyStore(keyStore).getPublicKey());
+		context.put(CommonConstants.SERVER_PUBLIC_KEY, Utilities.getSystemCertFromKeyStore(keyStore).getPublicKey());
 		
 		final PrivateKey privateKey = Utilities.getPrivateKey(keyStore, sslProperties.getKeyPassword());
 		context.put(CommonConstants.SERVER_PRIVATE_KEY, privateKey);
