@@ -8,7 +8,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-
+//import java.io.FileInputStream;
+import java.io.IOException;
 import javax.annotation.Resource;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,11 +32,16 @@ import javax.net.ssl.SSLContext;
 import org.apache.http.ssl.SSLContexts;
 import java.security.cert.X509Certificate;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.util.ServiceConfigurationError;
 
 import eu.arrowhead.client.library.util.ClientCommonConstants;
 import eu.arrowhead.client.library.util.CoreServiceUri;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
+//import eu.arrowhead.common.SecurityUtilities;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
@@ -79,7 +85,7 @@ public class ArrowheadService {
 	
 	@Resource(name = CommonConstants.ARROWHEAD_CONTEXT)
 	private Map<String,Object> arrowheadContext;
-	
+
 	@Autowired
 	private SSLProperties sslProperties;
 	
@@ -459,79 +465,31 @@ public class ArrowheadService {
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * Make WS connection with the specified service reachability details.
-	 *
-	 * @param handler WebSocket handler to use for message exchanges
-	 * @param address String value which represents the host where the service is available.
-	 * @param port int value which represents the port where the service is available
-	 * @param serviceUri String value which represents the URI where the service is available.
-	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
-	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
-	 * @return A WebSocket manager that is used for all full-duplex communication
-	 *
-	 * @throws InvalidParameterException when service URL can't be assembled.
-	 * @throws AuthException when ssl context or access control related issue happened.
-	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
-	 * @throws UnavailableServerException when the specified server is not available.
-	 */
-	public WebSocketConnectionManager connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri, 
-			final String token, final String... queryParams) {
-
-		if (Utilities.isEmpty(address)) {
-			throw new InvalidParameterException("address cannot be null or blank.");
-		}
-		if (Utilities.isEmpty(serviceUri)) {
-			throw new InvalidParameterException("serviceUri cannot be null or blank.");
-		}
-
-		String[] validatedQueryParams;
-		if (queryParams == null) {
-			validatedQueryParams = new String[0];
-		} else {
-			validatedQueryParams = queryParams;
-		}
-
-		UriComponents uri;
-		if(!Utilities.isEmpty(token)) {
-			final List<String> query = new ArrayList<>();
-			query.addAll(Arrays.asList(validatedQueryParams));
-			query.add(CommonConstants.REQUEST_PARAM_TOKEN);
-			query.add(token);
-			uri = Utilities.createURI("ws", address, port, serviceUri, query.toArray(new String[query.size()]));
-		} else {
-			uri = Utilities.createURI("ws", address, port, serviceUri, validatedQueryParams);
-		}
-
-		return new WebSocketConnectionManager(new StandardWebSocketClient(), handler, uri.toString() );
-	}
-
-
-	//-------------------------------------------------------------------------------------------------
-	/**
 	 * Make WSS connection with the specified service reachability details.
 	 *
-	 * @param trustStore The trusted certificates
-	 * @param keyStore The certificate
-	 * @param password The passwords
 	 * @param handler WebSocket handler to use for message exchanges
 	 * @param address String value which represents the host where the service is available.
 	 * @param port int value which represents the port where the service is available
 	 * @param serviceUri String value which represents the URI where the service is available.
 	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
 	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
-	 * @return A WebSocket manager that is used for all full-duplex communication
+	 * @return A WebSocketConnection manager that is used for all full-duplex communication
 	 *
 	 * @throws InvalidParameterException when service URL can't be assembled.
+	 * @throws CertificateException when a certificate or SSL error occurs
 	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
 	 */
-	public WebSocketConnectionManager connnectServiceWSS(final KeyStore trustStore, final KeyStore keyStore, final String password, final WebSocketHandler handler, final String address, final int port, final String serviceUri,
-			final String token, final String... queryParams) {
+	public WebSocketConnectionManager connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri,
+														final String token, final String... queryParams) {
 
 		if (Utilities.isEmpty(address)) {
 			throw new InvalidParameterException("address cannot be null or blank.");
 		}
 		if (Utilities.isEmpty(serviceUri)) {
 			throw new InvalidParameterException("serviceUri cannot be null or blank.");
+		}
+		if (port < 0 || port > 65535){
+			throw new InvalidParameterException("port cannot be negative or larger that 65535");
 		}
 
 		/* Handle query parameters */
@@ -542,6 +500,11 @@ public class ArrowheadService {
 			validatedQueryParams = queryParams;
 		}
 
+		String wsSec = "ws";
+		if( sslProperties.isSslEnabled() ) {
+			wsSec ="wss";
+		}
+
 		/* prepare the URI */
 		UriComponents uri;
 		if(!Utilities.isEmpty(token)) {
@@ -549,25 +512,28 @@ public class ArrowheadService {
 			query.addAll(Arrays.asList(validatedQueryParams));
 			query.add(CommonConstants.REQUEST_PARAM_TOKEN);
 			query.add(token);
-			uri = Utilities.createURI("wss", address, port, serviceUri, query.toArray(new String[query.size()]));
+			uri = Utilities.createURI(wsSec, address, port, serviceUri, query.toArray(new String[query.size()]));
 		} else {
-			uri = Utilities.createURI("wss", address, port, serviceUri, validatedQueryParams);
+			uri = Utilities.createURI(wsSec, address, port, serviceUri, validatedQueryParams);
 		}
 
-		/* try to establish WSS connection */
-		try {
-			final TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
-			final SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore, acceptingTrustStrategy).loadKeyMaterial(keyStore, password.toCharArray()).build();
+		/* try to establish WS(S) connection */
+		final StandardWebSocketClient wsClient = new StandardWebSocketClient();
+		if(sslProperties.isSslEnabled()) {
+			try {
+				final KeyStore trustStore = getTrustStore(); 
+				final KeyStore keyStore = getKeyStore();
+				final TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
+				final SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore, acceptingTrustStrategy).loadKeyMaterial(keyStore, sslProperties.getKeyStorePassword().toCharArray()).build();
 
-			final StandardWebSocketClient wsClient = new StandardWebSocketClient();
-			wsClient.getUserProperties().clear();
-			wsClient.getUserProperties().put(ClientCommonConstants.TOMCAT_WS_SSL_CONTEXT, sslContext);
-
-			return new WebSocketConnectionManager(wsClient, handler, uri.toString());
-		} catch(Exception e) {
-			logger.debug("WSS connection failed: " + e);
-			throw new ArrowheadException("WSS connection failed: " + e.getMessage());
+				wsClient.getUserProperties().clear();
+				wsClient.getUserProperties().put(ClientCommonConstants.TOMCAT_WS_SSL_CONTEXT, sslContext);
+			} catch(Exception e) {
+				throw new ArrowheadException("WSS connection failed: " + e.getMessage());
+			}
 		}
+		
+		return new WebSocketConnectionManager(wsClient, handler, uri.toString());
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -683,4 +649,27 @@ public class ArrowheadService {
 		publicServices.retainAll(CommonConstants.PUBLIC_CORE_SYSTEM_SERVICES);
 		return publicServices;
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	private KeyStore getKeyStore() {
+        try {
+            final KeyStore keystore = KeyStore.getInstance(sslProperties.getKeyStoreType());
+            keystore.load(sslProperties.getKeyStore().getInputStream(), sslProperties.getKeyStorePassword().toCharArray());
+            return keystore;
+        } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e) {
+            throw new ServiceConfigurationError("Cannot open keystore: " + e.getMessage());
+        }
+    }
+
+	//-------------------------------------------------------------------------------------------------
+    private KeyStore getTrustStore() {
+        try {
+            final KeyStore truststore = KeyStore.getInstance(sslProperties.getKeyStoreType());
+            truststore.load(sslProperties.getTrustStore().getInputStream(), sslProperties.getTrustStorePassword().toCharArray());
+            return truststore;
+        } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e) {
+            throw new ServiceConfigurationError("Cannot open truststore: " + e.getMessage());
+        }
+    }
+
 }
