@@ -481,12 +481,13 @@ public class ArrowheadService {
 	 * @return A WebSocketConnection manager that is used for all full-duplex communication
 	 *
 	 * @throws InvalidParameterException when service URL can't be assembled.
-	 * @throws CertificateException when a certificate or SSL error occurs
 	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
 	 */
-	public WebSocketConnectionManager connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri,
+	public void connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri,
 														final String token, final String... queryParams) {
-
+		if (handler == null) {
+			throw new InvalidParameterException("handler cannot be null.");
+		}
 		if (Utilities.isEmpty(address)) {
 			throw new InvalidParameterException("address cannot be null or blank.");
 		}
@@ -505,11 +506,6 @@ public class ArrowheadService {
 			validatedQueryParams = queryParams;
 		}
 
-		String wsSec = "ws";
-		if( sslProperties.isSslEnabled() ) {
-			wsSec ="wss";
-		}
-
 		/* prepare the URI */
 		UriComponents uri;
 		if(!Utilities.isEmpty(token)) {
@@ -517,9 +513,9 @@ public class ArrowheadService {
 			query.addAll(Arrays.asList(validatedQueryParams));
 			query.add(CommonConstants.REQUEST_PARAM_TOKEN);
 			query.add(token);
-			uri = Utilities.createURI(wsSec, address, port, serviceUri, query.toArray(new String[query.size()]));
+			uri = Utilities.createURI(getUriSchemeWS(), address, port, serviceUri, query.toArray(new String[query.size()]));
 		} else {
-			uri = Utilities.createURI(wsSec, address, port, serviceUri, validatedQueryParams);
+			uri = Utilities.createURI(getUriSchemeWS(), address, port, serviceUri, validatedQueryParams);
 		}
 
 		/* try to establish WS(S) connection */
@@ -538,7 +534,8 @@ public class ArrowheadService {
 			}
 		}
 		
-		return new WebSocketConnectionManager(wsClient, handler, uri.toString());
+		WebSocketConnectionManager manager = new WebSocketConnectionManager(wsClient, handler, uri.toString());
+		manager.start();
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -643,7 +640,7 @@ public class ArrowheadService {
 
 	//-------------------------------------------------------------------------------------------------
 	private String getUriSchemeWS() {
-		//return sslProperties.isSslEnabled() ? CommonConstants.WSS : CommonConstants.WS;
+		//return sslProperties.isSslEnabled() ? CommonConstants.WSS : CommonConstants.WS; //XXX should be updated when core-commons lib is updated
 		return sslProperties.isSslEnabled() ? "wss" : "ws";
 	}
 	
