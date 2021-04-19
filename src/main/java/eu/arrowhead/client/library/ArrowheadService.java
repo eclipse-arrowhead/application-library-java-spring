@@ -1,6 +1,8 @@
 package eu.arrowhead.client.library;
 
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -62,10 +64,10 @@ public class ArrowheadService {
 	@Value(ClientCommonConstants.$CLIENT_SERVER_PORT_WD)
 	private int clientSystemPort;
 	
-	@Value(CommonConstants.$SERVICE_REGISTRY_ADDRESS_WD)
+	@Value(CommonConstants.$SERVICEREGISTRY_ADDRESS_WD)
 	private String serviceReqistryAddress;
 	
-	@Value(CommonConstants.$SERVICE_REGISTRY_PORT_WD)
+	@Value(CommonConstants.$SERVICEREGISTRY_PORT_WD)
 	private int serviceRegistryPort;
 	
 	@Resource(name = CommonConstants.ARROWHEAD_CONTEXT)
@@ -150,10 +152,10 @@ public class ArrowheadService {
 		
 		try {
 			
-			if (coreSystem == CoreSystem.SERVICE_REGISTRY) {
+			if (coreSystem == CoreSystem.SERVICEREGISTRY) {
 				address = serviceReqistryAddress;
 				port = serviceRegistryPort;
-				coreUri = CommonConstants.SERVICE_REGISTRY_URI;
+				coreUri = CommonConstants.SERVICEREGISTRY_URI;
 				
 			} else {			
 				final List<CoreSystemService> publicServices = getPublicServicesOfCoreSystem(coreSystem);			
@@ -196,7 +198,7 @@ public class ArrowheadService {
 	 * @throws UnavailableServerException when Service Registry Core System is not available
 	 */
 	public ServiceRegistryResponseDTO registerServiceToServiceRegistry(final ServiceRegistryRequestDTO request) {
-		final String registerUriStr = CommonConstants.SERVICE_REGISTRY_URI + CommonConstants.OP_SERVICE_REGISTRY_REGISTER_URI;
+		final String registerUriStr = CommonConstants.SERVICEREGISTRY_URI + CommonConstants.OP_SERVICEREGISTRY_REGISTER_URI;
 		final UriComponents registerUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, registerUriStr);
 		
 		return httpService.sendRequest(registerUri, HttpMethod.POST, ServiceRegistryResponseDTO.class, request).getBody();
@@ -215,13 +217,13 @@ public class ArrowheadService {
 	 * @throws UnavailableServerException when Service Registry Core System is not available
 	 */
 	public ServiceRegistryResponseDTO forceRegisterServiceToServiceRegistry(final ServiceRegistryRequestDTO request) {
-		final String registerUriStr = CommonConstants.SERVICE_REGISTRY_URI + CommonConstants.OP_SERVICE_REGISTRY_REGISTER_URI;
+		final String registerUriStr = CommonConstants.SERVICEREGISTRY_URI + CommonConstants.OP_SERVICEREGISTRY_REGISTER_URI;
 		final UriComponents registerUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, registerUriStr);
 		
 		try {			
 			return httpService.sendRequest(registerUri, HttpMethod.POST, ServiceRegistryResponseDTO.class, request).getBody();
 		} catch (final InvalidParameterException ex) {
-			unregisterServiceFromServiceRegistry(request.getServiceDefinition());
+			unregisterServiceFromServiceRegistry(request.getServiceDefinition(), request.getServiceUri());
 			return httpService.sendRequest(registerUri, HttpMethod.POST, ServiceRegistryResponseDTO.class, request).getBody();
 		}	
 	}
@@ -231,19 +233,24 @@ public class ArrowheadService {
 	 * Sends a http(s) 'unregister' request to Service Registry Core System.
 	 * 
 	 * @param serviceDefinition String value which represents the service being deleted from service registry
+	 * @param serviceUri String value which represents the service URI (path after the hostname and port) of the service being deleted from service registry  
 	 * @throws AuthException when you are not authorized by Service Registry Core System
 	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
 	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
 	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
 	 * @throws UnavailableServerException when Service Registry Core System is not available
 	 */
-	public void unregisterServiceFromServiceRegistry(final String serviceDefinition) {
-		final String unregisterUriStr = CommonConstants.SERVICE_REGISTRY_URI + CommonConstants.OP_SERVICE_REGISTRY_UNREGISTER_URI;
-		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(4);
-		queryMap.put(CommonConstants.OP_SERVICE_REGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_SYSTEM_NAME, List.of(clientSystemName));
-		queryMap.put(CommonConstants.OP_SERVICE_REGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_ADDRESS, List.of(clientSystemAddress));
-		queryMap.put(CommonConstants.OP_SERVICE_REGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_PORT, List.of(String.valueOf(clientSystemPort)));
-		queryMap.put(CommonConstants.OP_SERVICE_REGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_DEFINITION, List.of(serviceDefinition));
+	public void unregisterServiceFromServiceRegistry(final String serviceDefinition, final String serviceUri) {
+		final String unregisterUriStr = CommonConstants.SERVICEREGISTRY_URI + CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_URI;
+		
+		final String _serviceUri = serviceUri != null ? serviceUri.trim() : "";
+		
+		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(5);
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_SYSTEM_NAME, List.of(clientSystemName));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_ADDRESS, List.of(clientSystemAddress));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_PORT, List.of(String.valueOf(clientSystemPort)));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_DEFINITION, List.of(serviceDefinition));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_URI, List.of(URLEncoder.encode(_serviceUri, StandardCharsets.UTF_8)));
 		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, queryMap, unregisterUriStr);
 		
 		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
@@ -497,10 +504,10 @@ public class ArrowheadService {
 		}
 		
 		final MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
-		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_EVENT_TYPE, eventType);
-		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_SYSTEM_NAME, subscriberName);
-		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_ADDRESS, subscriberAddress);
-		requestParams.add(CommonConstants.OP_EVENT_HANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_PORT, String.valueOf(subscriberPort));
+		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_EVENT_TYPE, eventType);
+		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_SYSTEM_NAME, subscriberName);
+		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_ADDRESS, subscriberAddress);
+		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_PORT, String.valueOf(subscriberPort));
 		
 		final UriComponents unsubscribeUri = Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), requestParams, uri.getPath());		
 		httpService.sendRequest(unsubscribeUri, HttpMethod.DELETE, Void.class);
@@ -545,7 +552,7 @@ public class ArrowheadService {
 		final ServiceQueryFormDTO request = new ServiceQueryFormDTO();
 		request.setServiceDefinitionRequirement(coreService.getServiceDefinition());
 		
-		return httpService.sendRequest(Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, CommonConstants.SERVICE_REGISTRY_URI + CommonConstants.OP_SERVICE_REGISTRY_QUERY_URI),
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, CommonConstants.SERVICEREGISTRY_URI + CommonConstants.OP_SERVICEREGISTRY_QUERY_URI),
 									   HttpMethod.POST, ServiceQueryResultDTO.class, request);
 	}
 	
