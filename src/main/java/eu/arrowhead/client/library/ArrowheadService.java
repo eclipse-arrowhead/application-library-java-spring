@@ -1,6 +1,5 @@
 package eu.arrowhead.client.library;
 
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
@@ -10,7 +9,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-//import java.io.FileInputStream;
 import java.io.IOException;
 import javax.annotation.Resource;
 
@@ -44,7 +42,6 @@ import eu.arrowhead.client.library.util.ClientCommonConstants;
 import eu.arrowhead.client.library.util.CoreServiceUri;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
-//import eu.arrowhead.common.SecurityUtilities;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
@@ -713,7 +710,7 @@ public class ArrowheadService {
             final KeyStore keystore = KeyStore.getInstance(sslProperties.getKeyStoreType());
             keystore.load(sslProperties.getKeyStore().getInputStream(), sslProperties.getKeyStorePassword().toCharArray());
             return keystore;
-        } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e) {
+        } catch (final KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e) {
             throw new ServiceConfigurationError("Cannot open keystore: " + e.getMessage());
         }
     }
@@ -724,9 +721,8 @@ public class ArrowheadService {
             final KeyStore truststore = KeyStore.getInstance(sslProperties.getKeyStoreType());
             truststore.load(sslProperties.getTrustStore().getInputStream(), sslProperties.getTrustStorePassword().toCharArray());
             return truststore;
-        } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e) {
+        } catch (final KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e) {
             throw new ServiceConfigurationError("Cannot open truststore: " + e.getMessage());
         }
     }
-
 }
