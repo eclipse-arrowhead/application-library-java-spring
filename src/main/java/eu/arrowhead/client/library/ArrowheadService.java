@@ -8,7 +8,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-
+//import java.io.FileInputStream;
+import java.io.IOException;
 import javax.annotation.Resource;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,11 +23,26 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.socket.client.WebSocketConnectionManager;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.WebSocketHandler;
+
+import org.apache.http.ssl.TrustStrategy;
+import javax.net.ssl.SSLContext;
+import org.apache.http.ssl.SSLContexts;
+import java.security.cert.X509Certificate;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.util.ServiceConfigurationError;
+import java.util.UUID;
 
 import eu.arrowhead.client.library.util.ClientCommonConstants;
 import eu.arrowhead.client.library.util.CoreServiceUri;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
+//import eu.arrowhead.common.SecurityUtilities;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
@@ -70,7 +86,7 @@ public class ArrowheadService {
 	
 	@Resource(name = CommonConstants.ARROWHEAD_CONTEXT)
 	private Map<String,Object> arrowheadContext;
-	
+
 	@Autowired
 	private SSLProperties sslProperties;
 	
@@ -455,6 +471,105 @@ public class ArrowheadService {
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
+	 * Make WS(S) connection with the specified service reachability details.
+	 *
+	 * @param handler WebSocket handler to use for message exchanges
+	 * @param address String value which represents the host where the service is available.
+	 * @param port int value which represents the port where the service is available
+	 * @param serviceUri String value which represents the URI where the service is available.
+	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
+	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
+	 * @return A string ID for the WebSocketConnection manager created and used for the full-duplex communication
+	 *
+	 * @throws InvalidParameterException when service URL can't be assembled.
+	 * @throws ArrowheadException when WSS connection failed or the communication is managed via Gateway Core System and internal server error happened.
+	 */
+	public String connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri, final String token, final String... queryParams) {
+		if (handler == null) {
+			throw new InvalidParameterException("handler cannot be null.");
+		}
+		if (Utilities.isEmpty(address)) {
+			throw new InvalidParameterException("address cannot be null or blank.");
+		}
+		if (Utilities.isEmpty(serviceUri)) {
+			throw new InvalidParameterException("serviceUri cannot be null or blank.");
+		}
+		if (port < CommonConstants.SYSTEM_PORT_RANGE_MIN || port > CommonConstants.SYSTEM_PORT_RANGE_MAX){
+			throw new InvalidParameterException("Port must be between " + CommonConstants.SYSTEM_PORT_RANGE_MIN + " and " + CommonConstants.SYSTEM_PORT_RANGE_MAX + ".");
+		}
+
+		/* Handle query parameters */
+		String[] validatedQueryParams;
+		if (queryParams == null) {
+			validatedQueryParams = new String[0];
+		} else {
+			validatedQueryParams = queryParams;
+		}
+
+		/* prepare the URI */
+		UriComponents uri;
+		if(!Utilities.isEmpty(token)) {
+			final List<String> query = new ArrayList<>();
+			query.addAll(Arrays.asList(validatedQueryParams));
+			query.add(CommonConstants.REQUEST_PARAM_TOKEN);
+			query.add(token);
+			uri = Utilities.createURI(getUriSchemeWS(), address, port, serviceUri, query.toArray(new String[query.size()]));
+		} else {
+			uri = Utilities.createURI(getUriSchemeWS(), address, port, serviceUri, validatedQueryParams);
+		}
+
+		/* try to establish WS(S) connection */
+		final StandardWebSocketClient wsClient = new StandardWebSocketClient();
+		if(sslProperties.isSslEnabled()) {
+			try {
+				final KeyStore trustStore = getTrustStore(); 
+				final KeyStore keyStore = getKeyStore();
+				final TrustStrategy acceptingTrustStrategy = (final X509Certificate[] chain, final String authType) -> true;
+				final SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore, acceptingTrustStrategy).loadKeyMaterial(keyStore, sslProperties.getKeyStorePassword().toCharArray()).build();
+
+				wsClient.getUserProperties().clear();
+				wsClient.getUserProperties().put(ClientCommonConstants.TOMCAT_WS_SSL_CONTEXT, sslContext);
+			} catch(final Exception e) {
+				throw new ArrowheadException("WSS connection failed: " + e.getMessage());
+			}
+		}
+		
+		final WebSocketConnectionManager manager = new WebSocketConnectionManager(wsClient, handler, uri.toString());
+		manager.start();
+		final String managerId = ClientCommonConstants.WS_MANAGER_ID_PREFIX + UUID.randomUUID().toString();
+		arrowheadContext.put(managerId, manager);
+		return managerId;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Close the WS(S) connection by the given WebSocketConnectionManager ID if any.
+	 *
+	 * @param wsManagerId string id of the WebSocketConnectionManager
+	 * @return true if and only if the connection was alive, otherwise false
+	 *
+	 * @throws InvalidParameterException when wsManagerId is null or blank..
+	 */
+	public boolean closeWSConnection(final String wsManagerId) {
+		if (Utilities.isEmpty(wsManagerId)) {
+			throw new InvalidParameterException("wsManagerId cannot be null or blank.");
+		}
+		
+		if (arrowheadContext.containsKey(wsManagerId)) {
+			final WebSocketConnectionManager manager = (WebSocketConnectionManager) arrowheadContext.get(wsManagerId);
+			final boolean alive = manager.isRunning();
+			if (alive) {
+				manager.stop();
+			}			
+			arrowheadContext.remove(wsManagerId);
+			return alive;
+		}
+		
+		return false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
 	 * Sends a http(s) 'subscription' request to Event Handler Core System.
 	 * 
 	 * @param request SubscriptionRequestDTO which represents the required payload of the http(s) request
@@ -552,6 +667,11 @@ public class ArrowheadService {
 	private String getUriScheme() {
 		return sslProperties.isSslEnabled() ? CommonConstants.HTTPS : CommonConstants.HTTP;
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	private String getUriSchemeWS() {
+		return sslProperties.isSslEnabled() ? "wss" : "ws"; //TODO change string literals to CommonConstants.WSS/WS when core-client-skeleton lib is updated
+	}
 	
 	//-------------------------------------------------------------------------------------------------
 	private String getUriSchemeFromInterfaceName(final String interfaceName) {
@@ -578,4 +698,27 @@ public class ArrowheadService {
 		publicServices.retainAll(CommonConstants.PUBLIC_CORE_SYSTEM_SERVICES);
 		return publicServices;
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	private KeyStore getKeyStore() {
+        try {
+            final KeyStore keystore = KeyStore.getInstance(sslProperties.getKeyStoreType());
+            keystore.load(sslProperties.getKeyStore().getInputStream(), sslProperties.getKeyStorePassword().toCharArray());
+            return keystore;
+        } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e) {
+            throw new ServiceConfigurationError("Cannot open keystore: " + e.getMessage());
+        }
+    }
+
+	//-------------------------------------------------------------------------------------------------
+    private KeyStore getTrustStore() {
+        try {
+            final KeyStore truststore = KeyStore.getInstance(sslProperties.getKeyStoreType());
+            truststore.load(sslProperties.getTrustStore().getInputStream(), sslProperties.getTrustStorePassword().toCharArray());
+            return truststore;
+        } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e) {
+            throw new ServiceConfigurationError("Cannot open truststore: " + e.getMessage());
+        }
+    }
+
 }

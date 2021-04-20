@@ -14,6 +14,9 @@ public class ClientCommonConstants {
 	public static final String TOKEN_SECURITY_FILTER_ENABLED = "token.security.filter.enabled";
 	public static final String $TOKEN_SECURITY_FILTER_ENABLED_WD = "${" + TOKEN_SECURITY_FILTER_ENABLED + ":true" + "}";
 	public static final String CORE_SERVICE_DEFINITION_SUFFIX = "-ah.core";
+
+	public static final String TOMCAT_WS_SSL_CONTEXT = "org.apache.tomcat.websocket.SSL_CONTEXT";
+	public static final String WS_MANAGER_ID_PREFIX = "ws.manager.";
 	
 	//=================================================================================================
 	// assistant methods
