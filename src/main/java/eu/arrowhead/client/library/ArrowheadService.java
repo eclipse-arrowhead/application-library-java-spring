@@ -36,6 +36,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.ServiceConfigurationError;
+import java.util.UUID;
 
 import eu.arrowhead.client.library.util.ClientCommonConstants;
 import eu.arrowhead.client.library.util.CoreServiceUri;
@@ -470,7 +471,7 @@ public class ArrowheadService {
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * Make WSS connection with the specified service reachability details.
+	 * Make WS(S) connection with the specified service reachability details.
 	 *
 	 * @param handler WebSocket handler to use for message exchanges
 	 * @param address String value which represents the host where the service is available.
@@ -478,13 +479,12 @@ public class ArrowheadService {
 	 * @param serviceUri String value which represents the URI where the service is available.
 	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.
 	 * @param queryParams (nullable) String... variable arguments which represent the additional key-value http(s) query parameters if any necessary. E.g.: "k1", "v1", "k2", "v2".
-	 * @return A WebSocketConnection manager that is used for all full-duplex communication
+	 * @return A string ID for the WebSocketConnection manager created and used for the full-duplex communication
 	 *
 	 * @throws InvalidParameterException when service URL can't be assembled.
-	 * @throws ArrowheadException when the communication is managed via Gateway Core System and internal server error happened.
+	 * @throws ArrowheadException when WSS connection failed or the communication is managed via Gateway Core System and internal server error happened.
 	 */
-	public void connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri,
-														final String token, final String... queryParams) {
+	public String connnectServiceWS(final WebSocketHandler handler, final String address, final int port, final String serviceUri, final String token, final String... queryParams) {
 		if (handler == null) {
 			throw new InvalidParameterException("handler cannot be null.");
 		}
@@ -494,8 +494,8 @@ public class ArrowheadService {
 		if (Utilities.isEmpty(serviceUri)) {
 			throw new InvalidParameterException("serviceUri cannot be null or blank.");
 		}
-		if (port < 0 || port > 65535){
-			throw new InvalidParameterException("port cannot be negative or larger that 65535");
+		if (port < CommonConstants.SYSTEM_PORT_RANGE_MIN || port > CommonConstants.SYSTEM_PORT_RANGE_MAX){
+			throw new InvalidParameterException("Port must be between " + CommonConstants.SYSTEM_PORT_RANGE_MIN + " and " + CommonConstants.SYSTEM_PORT_RANGE_MAX + ".");
 		}
 
 		/* Handle query parameters */
@@ -524,18 +524,48 @@ public class ArrowheadService {
 			try {
 				final KeyStore trustStore = getTrustStore(); 
 				final KeyStore keyStore = getKeyStore();
-				final TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
+				final TrustStrategy acceptingTrustStrategy = (final X509Certificate[] chain, final String authType) -> true;
 				final SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore, acceptingTrustStrategy).loadKeyMaterial(keyStore, sslProperties.getKeyStorePassword().toCharArray()).build();
 
 				wsClient.getUserProperties().clear();
 				wsClient.getUserProperties().put(ClientCommonConstants.TOMCAT_WS_SSL_CONTEXT, sslContext);
-			} catch(Exception e) {
+			} catch(final Exception e) {
 				throw new ArrowheadException("WSS connection failed: " + e.getMessage());
 			}
 		}
 		
-		WebSocketConnectionManager manager = new WebSocketConnectionManager(wsClient, handler, uri.toString());
+		final WebSocketConnectionManager manager = new WebSocketConnectionManager(wsClient, handler, uri.toString());
 		manager.start();
+		final String managerId = ClientCommonConstants.WS_MANAGER_ID_PREFIX + UUID.randomUUID().toString();
+		arrowheadContext.put(managerId, manager);
+		return managerId;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Close the WS(S) connection by the given WebSocketConnectionManager ID if any.
+	 *
+	 * @param wsManagerId string id of the WebSocketConnectionManager
+	 * @return true if and only if the connection was alive, otherwise false
+	 *
+	 * @throws InvalidParameterException when wsManagerId is null or blank..
+	 */
+	public boolean closeWSConnection(final String wsManagerId) {
+		if (Utilities.isEmpty(wsManagerId)) {
+			throw new InvalidParameterException("wsManagerId cannot be null or blank.");
+		}
+		
+		if (arrowheadContext.containsKey(wsManagerId)) {
+			final WebSocketConnectionManager manager = (WebSocketConnectionManager) arrowheadContext.get(wsManagerId);
+			final boolean alive = manager.isRunning();
+			if (alive) {
+				manager.stop();
+			}			
+			arrowheadContext.remove(wsManagerId);
+			return alive;
+		}
+		
+		return false;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -640,8 +670,7 @@ public class ArrowheadService {
 
 	//-------------------------------------------------------------------------------------------------
 	private String getUriSchemeWS() {
-		//return sslProperties.isSslEnabled() ? CommonConstants.WSS : CommonConstants.WS; //XXX should be updated when core-commons lib is updated
-		return sslProperties.isSslEnabled() ? "wss" : "ws";
+		return sslProperties.isSslEnabled() ? "wss" : "ws"; //TODO change string literals to CommonConstants.WSS/WS when core-client-skeleton lib is updated
 	}
 	
 	//-------------------------------------------------------------------------------------------------
