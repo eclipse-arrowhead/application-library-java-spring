@@ -1,17 +1,26 @@
 package eu.arrowhead.client.library;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.io.IOException;
-import javax.annotation.Resource;
+import java.util.ServiceConfigurationError;
+import java.util.UUID;
 
+import javax.annotation.Resource;
+import javax.net.ssl.SSLContext;
+
+import org.apache.http.ssl.SSLContexts;
+import org.apache.http.ssl.TrustStrategy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,22 +30,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.util.UriComponents;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.client.WebSocketConnectionManager;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.WebSocketHandler;
-
-import org.apache.http.ssl.TrustStrategy;
-import javax.net.ssl.SSLContext;
-import org.apache.http.ssl.SSLContexts;
-import java.security.cert.X509Certificate;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.util.ServiceConfigurationError;
-import java.util.UUID;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import eu.arrowhead.client.library.util.ClientCommonConstants;
 import eu.arrowhead.client.library.util.CoreServiceUri;
@@ -263,7 +261,7 @@ public class ArrowheadService {
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_ADDRESS, List.of(clientSystemAddress));
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_PORT, List.of(String.valueOf(clientSystemPort)));
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_DEFINITION, List.of(serviceDefinition));
-		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_URI, List.of(URLEncoder.encode(_serviceUri, StandardCharsets.UTF_8)));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_URI, List.of(_serviceUri));
 		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, queryMap, unregisterUriStr);
 		
 		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
