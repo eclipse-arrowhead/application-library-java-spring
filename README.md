@@ -1,7 +1,7 @@
-# Arrowhead Client Library (Java Spring-Boot)
-##### The project provides client library for the Arrowhead Framework 4.1.3
+# Arrowhead Application Library (Java Spring-Boot)
+##### The project provides an application development library for the Eclipse Arrowhead Framework
 
-Arrowhead Client Library contains all the common arrowhead dependencies and data transfer objects and also an 'ArrowheadService' with the purpose of easily interacting with the framework.
+Arrowhead Application Library contains all the common Arrowhead dependencies and data transfer objects and also an 'ArrowheadService' with the purpose of easily interacting with the framework.
 
 ### Requirements
 

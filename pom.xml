@@ -9,13 +9,13 @@
 	</parent>
 	
 	<groupId>eu.arrowhead</groupId>	
-	<artifactId>client-library</artifactId>
+	<artifactId>application-library</artifactId>
 	<version>4.3.0.0</version>
 	<packaging>jar</packaging>
-	<name>client-library-java-spring</name>
-	<description>Arrowhead Client Library using Spring Boot</description>
+	<name>application-library-java-spring</name>
+	<description>Arrowhead Application Library using Spring Boot</description>
 	
-	<url>https://github.com/arrowhead-f/client-library-java-spring</url>
+	<url>https://github.com/arrowhead-f/application-library-java-spring</url>
 	<licenses>
     <license>
 	     	<name>Eclipse Public License - v 2.0</name>
