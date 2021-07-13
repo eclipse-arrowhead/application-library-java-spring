@@ -296,7 +296,8 @@ public class ArrowheadService {
 		
 		final ResponseEntity<String> response = httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.GET, String.class);
 				
-		return Utilities.getPublicKeyFromBase64EncodedString(response.getBody());
+		final String encodedKey = Utilities.fromJson(response.getBody(), String.class);
+		return Utilities.getPublicKeyFromBase64EncodedString(encodedKey);
 	}
 	
 	//-------------------------------------------------------------------------------------------------

@@ -10,14 +10,14 @@
 	
 	<groupId>eu.arrowhead</groupId>	
 	<artifactId>application-library</artifactId>
-	<version>4.3.0.0</version>
+	<version>4.4.0.0</version>
 	<packaging>jar</packaging>
 	<name>application-library-java-spring</name>
 	<description>Arrowhead Application Library using Spring Boot</description>
 	
 	<url>https://github.com/arrowhead-f/application-library-java-spring</url>
 	<licenses>
-    <license>
+    	<license>
 	     	<name>Eclipse Public License - v 2.0</name>
 	     	<url>https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.txt</url>
 	   </license>
