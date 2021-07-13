@@ -9,13 +9,13 @@
 	</parent>
 	
 	<groupId>eu.arrowhead</groupId>	
-	<artifactId>client-library</artifactId>
-	<version>4.4.1</version>
+	<artifactId>application-library</artifactId>
+	<version>4.4.0.0</version>
 	<packaging>jar</packaging>
-	<name>client-library-java-spring</name>
-	<description>Arrowhead Client Library using Spring Boot</description>
+	<name>application-library-java-spring</name>
+	<description>Arrowhead Application Library using Spring Boot</description>
 	
-	<url>https://github.com/arrowhead-f/client-library-java-spring</url>
+	<url>https://github.com/arrowhead-f/application-library-java-spring</url>
 	<licenses>
     	<license>
 	     	<name>Eclipse Public License - v 2.0</name>
@@ -72,9 +72,9 @@
 		</dependency>
 		
 		<dependency>
-           <groupId>org.apache.httpcomponents</groupId>
-           <artifactId>httpclient</artifactId>
-        </dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
 		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -94,15 +94,15 @@
 		</dependency>
 		
 		<dependency>
-                        <groupId>org.springframework</groupId>
-                        <artifactId>spring-websocket</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-websocket</artifactId>
 		</dependency>
 
 		<dependency>
-	    	<groupId>org.bitbucket.b_c</groupId>
-	    	<artifactId>jose4j</artifactId>
-	    	<version>0.6.5</version>
-	    </dependency>	    
+	    <groupId>org.bitbucket.b_c</groupId>
+	    <artifactId>jose4j</artifactId>
+	    <version>0.6.5</version>
+	  </dependency>	    
 	    
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
