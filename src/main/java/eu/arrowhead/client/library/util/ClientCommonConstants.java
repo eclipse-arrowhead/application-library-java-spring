@@ -1,3 +1,16 @@
+/********************************************************************************
+ * Copyright (c) 2020 AITIA
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *   AITIA - implementation
+ ********************************************************************************/
+
 package eu.arrowhead.client.library.util;
 
 public class ClientCommonConstants {
@@ -14,6 +27,9 @@ public class ClientCommonConstants {
 	public static final String TOKEN_SECURITY_FILTER_ENABLED = "token.security.filter.enabled";
 	public static final String $TOKEN_SECURITY_FILTER_ENABLED_WD = "${" + TOKEN_SECURITY_FILTER_ENABLED + ":true" + "}";
 	public static final String CORE_SERVICE_DEFINITION_SUFFIX = "-ah.core";
+
+	public static final String TOMCAT_WS_SSL_CONTEXT = "org.apache.tomcat.websocket.SSL_CONTEXT";
+	public static final String WS_MANAGER_ID_PREFIX = "ws.manager.";
 	
 	//=================================================================================================
 	// assistant methods
