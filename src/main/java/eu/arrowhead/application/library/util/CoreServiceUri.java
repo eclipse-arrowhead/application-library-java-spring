@@ -11,7 +11,7 @@
  *   AITIA - implementation
  ********************************************************************************/
 
-package eu.arrowhead.client.library.util;
+package eu.arrowhead.application.library.util;
 
 import org.springframework.util.Assert;
 

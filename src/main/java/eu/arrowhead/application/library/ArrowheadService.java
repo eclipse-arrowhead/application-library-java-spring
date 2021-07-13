@@ -11,7 +11,7 @@
  *   AITIA - implementation
  ********************************************************************************/
 
-package eu.arrowhead.client.library;
+package eu.arrowhead.application.library;
 
 import java.io.IOException;
 import java.security.KeyStore;
@@ -49,8 +49,8 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import eu.arrowhead.client.library.util.ClientCommonConstants;
-import eu.arrowhead.client.library.util.CoreServiceUri;
+import eu.arrowhead.application.library.util.ApplicationCommonConstants;
+import eu.arrowhead.application.library.util.CoreServiceUri;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
@@ -79,14 +79,14 @@ public class ArrowheadService {
 	//=================================================================================================
 	// members
 	
-	@Value(ClientCommonConstants.$CLIENT_SYSTEM_NAME)
-	private String clientSystemName;
+	@Value(ApplicationCommonConstants.$APPLICATION_SYSTEM_NAME)
+	private String applicationSystemName;
 	
-	@Value(ClientCommonConstants.$CLIENT_SERVER_ADDRESS_WD)
-	private String clientSystemAddress;
+	@Value(ApplicationCommonConstants.$APPLICATION_SERVER_ADDRESS_WD)
+	private String applicationSystemAddress;
 	
-	@Value(ClientCommonConstants.$CLIENT_SERVER_PORT_WD)
-	private int clientSystemPort;
+	@Value(ApplicationCommonConstants.$APPLICATION_SERVER_PORT_WD)
+	private int applicationSystemPort;
 	
 	@Value(CommonConstants.$SERVICEREGISTRY_ADDRESS_WD)
 	private String serviceReqistryAddress;
@@ -120,11 +120,11 @@ public class ArrowheadService {
 		if (!CommonConstants.PUBLIC_CORE_SYSTEM_SERVICES.contains(coreSystemService)) {
 			logger.debug("'{}' core service is not a public service.", coreSystemService);
 			return null;
-		} else if (!arrowheadContext.containsKey(coreSystemService.getServiceDefinition() + ClientCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX)) {
+		} else if (!arrowheadContext.containsKey(coreSystemService.getServiceDefinition() + ApplicationCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX)) {
 			logger.debug("'{}' core service is not contained by Arrowhead Context.", coreSystemService);
 			return null;
 		} else {
-			return (CoreServiceUri) arrowheadContext.get(coreSystemService.getServiceDefinition() + ClientCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX);
+			return (CoreServiceUri) arrowheadContext.get(coreSystemService.getServiceDefinition() + ApplicationCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX);
 		}		
 	}
 	
@@ -148,11 +148,11 @@ public class ArrowheadService {
 				
 				if (response.getBody().getServiceQueryData().isEmpty()) {
 					logger.info("'{}' core service couldn't be retrieved due to the following reason: not registered by Serivce Registry", coreService.getServiceDefinition());
-					arrowheadContext.remove(coreService.getServiceDefinition() + ClientCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX);
+					arrowheadContext.remove(coreService.getServiceDefinition() + ApplicationCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX);
 					
 				} else {
 					final ServiceRegistryResponseDTO serviceRegistryResponseDTO = response.getBody().getServiceQueryData().get(0);
-					arrowheadContext.put(coreService.getServiceDefinition() + ClientCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX, new CoreServiceUri(serviceRegistryResponseDTO.getProvider().getAddress(),
+					arrowheadContext.put(coreService.getServiceDefinition() + ApplicationCommonConstants.CORE_SERVICE_DEFINITION_SUFFIX, new CoreServiceUri(serviceRegistryResponseDTO.getProvider().getAddress(),
 							serviceRegistryResponseDTO.getProvider().getPort(), serviceRegistryResponseDTO.getServiceUri()));					
 				}
 				
@@ -270,9 +270,9 @@ public class ArrowheadService {
 		final String _serviceUri = serviceUri != null ? serviceUri.trim() : "";
 		
 		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(5);
-		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_SYSTEM_NAME, List.of(clientSystemName));
-		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_ADDRESS, List.of(clientSystemAddress));
-		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_PORT, List.of(String.valueOf(clientSystemPort)));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_SYSTEM_NAME, List.of(applicationSystemName));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_ADDRESS, List.of(applicationSystemAddress));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_PORT, List.of(String.valueOf(applicationSystemPort)));
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_DEFINITION, List.of(serviceDefinition));
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_URI, List.of(_serviceUri));
 		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, queryMap, unregisterUriStr);
@@ -332,9 +332,9 @@ public class ArrowheadService {
 	 */
 	public Builder getOrchestrationFormBuilder() {
 		final SystemRequestDTO thisSystem = new SystemRequestDTO();
-		thisSystem.setSystemName(clientSystemName);
-		thisSystem.setAddress(clientSystemAddress);
-		thisSystem.setPort(clientSystemPort);
+		thisSystem.setSystemName(applicationSystemName);
+		thisSystem.setAddress(applicationSystemAddress);
+		thisSystem.setPort(applicationSystemPort);
 		if (sslProperties.isSslEnabled()) {
 			final PublicKey publicKey = (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
 			thisSystem.setAuthenticationInfo(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
@@ -544,7 +544,7 @@ public class ArrowheadService {
 				final SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore, acceptingTrustStrategy).loadKeyMaterial(keyStore, sslProperties.getKeyStorePassword().toCharArray()).build();
 
 				wsClient.getUserProperties().clear();
-				wsClient.getUserProperties().put(ClientCommonConstants.TOMCAT_WS_SSL_CONTEXT, sslContext);
+				wsClient.getUserProperties().put(ApplicationCommonConstants.TOMCAT_WS_SSL_CONTEXT, sslContext);
 			} catch(final Exception e) {
 				throw new ArrowheadException("WSS connection failed: " + e.getMessage());
 			}
@@ -552,7 +552,7 @@ public class ArrowheadService {
 		
 		final WebSocketConnectionManager manager = new WebSocketConnectionManager(wsClient, handler, uri.toString());
 		manager.start();
-		final String managerId = ClientCommonConstants.WS_MANAGER_ID_PREFIX + UUID.randomUUID().toString();
+		final String managerId = ApplicationCommonConstants.WS_MANAGER_ID_PREFIX + UUID.randomUUID().toString();
 		arrowheadContext.put(managerId, manager);
 		return managerId;
 	}
@@ -661,7 +661,7 @@ public class ArrowheadService {
 	/**
 	 * Get the serverCN from arrowheadContext
 	 * 
-	 * @returns Arrowhead Client-System ServerCN
+	 * @returns Arrowhead Application-System ServerCN
 	*/
 	public String getServerCN(){
 		return (String) arrowheadContext.get(CommonConstants.SERVER_COMMON_NAME);

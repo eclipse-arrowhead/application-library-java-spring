@@ -11,7 +11,7 @@
  *   AITIA - implementation
  ********************************************************************************/
 
-package eu.arrowhead.client.library.config;
+package eu.arrowhead.application.library.config;
 
 import java.io.IOException;
 import java.security.KeyStore;
@@ -36,7 +36,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.client.library.ArrowheadService;
+import eu.arrowhead.application.library.ArrowheadService;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
@@ -132,10 +132,10 @@ public abstract class ApplicationInitListener {
 		final X509Certificate serverCertificate = Utilities.getSystemCertFromKeyStore(keyStore);
 		final String serverCN = Utilities.getCertCNFromSubject(serverCertificate.getSubjectDN().getName());
 		if (!Utilities.isKeyStoreCNArrowheadValid(serverCN)) {
-			logger.info("Client CN ({}) is not compliant with the Arrowhead certificate structure, since it does not have 5 parts, or does not end with \"arrowhead.eu\".", serverCN);
+			logger.info("Application system CN ({}) is not compliant with the Arrowhead certificate structure, since it does not have 5 parts, or does not end with \"arrowhead.eu\".", serverCN);
 			throw new AuthException("Server CN (" + serverCN + ") is not compliant with the Arrowhead certificate structure, since it does not have 5 parts, or does not end with \"arrowhead.eu\".");
 		}
-		logger.info("Client CN: {}", serverCN);
+		logger.info("Application system CN: {}", serverCN);
 		
 		@SuppressWarnings("unchecked")
 		final Map<String,Object> context = appContext.getBean(CommonConstants.ARROWHEAD_CONTEXT, Map.class);

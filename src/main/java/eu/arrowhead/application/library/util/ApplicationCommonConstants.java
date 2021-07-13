@@ -11,19 +11,19 @@
  *   AITIA - implementation
  ********************************************************************************/
 
-package eu.arrowhead.client.library.util;
+package eu.arrowhead.application.library.util;
 
-public class ClientCommonConstants {
+public class ApplicationCommonConstants {
 	
 	//=================================================================================================
 	// members
 
-	public static final String CLIENT_SYSTEM_NAME = "client_system_name";
-	public static final String $CLIENT_SYSTEM_NAME = "${" + CLIENT_SYSTEM_NAME + "}";
-	public static final String CLIENT_SERVER_ADDRESS = "server.address";
-	public static final String $CLIENT_SERVER_ADDRESS_WD = "${" + CLIENT_SERVER_ADDRESS + ": localhost" + "}";
-	public static final String CLIENT_SERVER_PORT = "server.port";
-	public static final String $CLIENT_SERVER_PORT_WD = "${" + CLIENT_SERVER_PORT + ": 8080" + "}";
+	public static final String APPLICATION_SYSTEM_NAME = "application-system-name";
+	public static final String $APPLICATION_SYSTEM_NAME = "${" + APPLICATION_SYSTEM_NAME + "}";
+	public static final String APPLICATION_SERVER_ADDRESS = "server.address";
+	public static final String $APPLICATION_SERVER_ADDRESS_WD = "${" + APPLICATION_SERVER_ADDRESS + ": localhost" + "}";
+	public static final String APPLICATION_SERVER_PORT = "server.port";
+	public static final String $APPLICATION_SERVER_PORT_WD = "${" + APPLICATION_SERVER_PORT + ": 8080" + "}";
 	public static final String TOKEN_SECURITY_FILTER_ENABLED = "token.security.filter.enabled";
 	public static final String $TOKEN_SECURITY_FILTER_ENABLED_WD = "${" + TOKEN_SECURITY_FILTER_ENABLED + ":true" + "}";
 	public static final String CORE_SERVICE_DEFINITION_SUFFIX = "-ah.core";
@@ -35,7 +35,7 @@ public class ClientCommonConstants {
 	// assistant methods
 
 	//-------------------------------------------------------------------------------------------------
-	private ClientCommonConstants() {
+	private ApplicationCommonConstants() {
 		throw new UnsupportedOperationException();
 	}
 }

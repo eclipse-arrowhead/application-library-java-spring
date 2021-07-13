@@ -11,14 +11,14 @@
  *   AITIA - implementation
  ********************************************************************************/
 
-package eu.arrowhead.client.library.util;
+package eu.arrowhead.application.library.util;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
-import eu.arrowhead.client.library.ArrowheadService;
+import eu.arrowhead.application.library.ArrowheadService;
 import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.http.HttpService;
 
