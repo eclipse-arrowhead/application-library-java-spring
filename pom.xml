@@ -32,22 +32,10 @@
 	</distributionManagement>
 	
 	<dependencies>
-		<!-- TODO: upload this version of the package to the Github -->
-		<!--
 		<dependency>
-			<groupId>eu.arrowhead</groupId>
-			<artifactId>core-client-skeleton</artifactId>
-			<version>4.4.1</version>
-		</dependency>
-		-->
-		
-		<!-- TODO: only for development -->
-		<dependency>
-			<groupId>eu.arrowhead</groupId>
-			<artifactId>core-client-skeleton</artifactId>
-			<version>4.4.1</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/src/main/resources/core-client-skeleton.jar</systemPath>
+  			<groupId>ai.aitia</groupId>
+  			<artifactId>arrowhead-core-common-essentials-java-spring</artifactId>
+  			<version>4.4.0.0</version>
 		</dependency>
 	
 		<dependency>
