@@ -35,7 +35,7 @@
 		<dependency>
   			<groupId>ai.aitia</groupId>
   			<artifactId>arrowhead-core-common-essentials-java-spring</artifactId>
-  			<version>4.4.0.0</version>
+  			<version>4.4.0.1</version>
 		</dependency>
 	
 		<dependency>
