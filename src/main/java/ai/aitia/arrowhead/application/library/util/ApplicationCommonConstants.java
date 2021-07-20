@@ -11,7 +11,7 @@
  *   AITIA - implementation
  ********************************************************************************/
 
-package eu.arrowhead.application.library.util;
+package ai.aitia.arrowhead.application.library.util;
 
 public class ApplicationCommonConstants {
 	

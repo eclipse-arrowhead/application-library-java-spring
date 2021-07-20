@@ -11,7 +11,7 @@
  *   AITIA - implementation
  ********************************************************************************/
 
-package eu.arrowhead.application.library.config;
+package ai.aitia.arrowhead.application.library.config;
 
 import java.io.IOException;
 import java.security.KeyStore;
@@ -36,7 +36,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.Assert;
 
-import eu.arrowhead.application.library.ArrowheadService;
+import ai.aitia.arrowhead.application.library.ArrowheadService;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
