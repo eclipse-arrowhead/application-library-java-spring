@@ -11,7 +11,7 @@
  *   AITIA - implementation
  ********************************************************************************/
 
-package eu.arrowhead.application.library;
+package ai.aitia.arrowhead.application.library;
 
 import java.io.IOException;
 import java.security.KeyStore;
@@ -49,8 +49,8 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import eu.arrowhead.application.library.util.ApplicationCommonConstants;
-import eu.arrowhead.application.library.util.CoreServiceUri;
+import ai.aitia.arrowhead.application.library.util.ApplicationCommonConstants;
+import ai.aitia.arrowhead.application.library.util.CoreServiceUri;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
