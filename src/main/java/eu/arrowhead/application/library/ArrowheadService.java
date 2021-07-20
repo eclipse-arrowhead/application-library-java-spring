@@ -391,7 +391,7 @@ public class ArrowheadService {
 	/**
 	 * Sends a http(s) request with the specified service reachability details.
 	 * 
-	 * @param responseType which represents the expected response body.
+	 * @param <T> responseType which represents the expected response body.
 	 * @param httpMethod HttpMethod enum which represents the method how the service is available.
 	 * @param address String value which represents the host where the service is available.
 	 * @param port int value which represents the port where the service is available
@@ -451,7 +451,7 @@ public class ArrowheadService {
 	/**
 	 * Sends a http(s) request with the specified service reachability details.
 	 * 
-	 * @param responseType which represents the expected response body.
+	 * @param <T> responseType which represents the expected response body.
 	 * @param httpMethod HttpMethod enum which represents the method how the service is available.
 	 * @param uriComponents UriComponents object which represents the URI where the service is available.
 	 * @param token (nullable) String value which represents the token for being authorized at the provider side if necessary. Token could be received in orchestration response per interface type.  
@@ -661,7 +661,7 @@ public class ArrowheadService {
 	/**
 	 * Get the serverCN from arrowheadContext
 	 * 
-	 * @returns Arrowhead Application-System ServerCN
+	 * @return Arrowhead Application-System ServerCN
 	*/
 	public String getServerCN(){
 		return (String) arrowheadContext.get(CommonConstants.SERVER_COMMON_NAME);
@@ -686,7 +686,7 @@ public class ArrowheadService {
 
 	//-------------------------------------------------------------------------------------------------
 	private String getUriSchemeWS() {
-		return sslProperties.isSslEnabled() ? "wss" : "ws"; //TODO change string literals to CommonConstants.WSS/WS when core-client-skeleton lib is updated
+		return sslProperties.isSslEnabled() ? CommonConstants.WSS : CommonConstants.WS;
 	}
 	
 	//-------------------------------------------------------------------------------------------------

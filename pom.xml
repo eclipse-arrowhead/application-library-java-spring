@@ -8,28 +8,57 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	
-	<groupId>eu.arrowhead</groupId>	
-	<artifactId>application-library</artifactId>
+	<groupId>ai.aitia</groupId>	
+	<artifactId>arrowhead-application-library-java-spring</artifactId>
 	<version>4.4.0.0</version>
 	<packaging>jar</packaging>
-	<name>application-library-java-spring</name>
-	<description>Arrowhead Application Library using Spring Boot</description>
 	
-	<url>https://github.com/arrowhead-f/application-library-java-spring</url>
+	<name>application-library-java-spring</name>
+	<description>Arrowhead Application Library using Spring Boot</description>	
+	<url>https://github.com/eclipse-arrowhead/application-library-java-spring</url>
+	
 	<licenses>
     	<license>
 	     	<name>Eclipse Public License - v 2.0</name>
 	     	<url>https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.txt</url>
 	   </license>
   	</licenses>
+  	
+  	<developers>
+		<developer>
+			<name>Tamas Bordi</name>
+			<email>tbordi@aitia.ai</email>
+			<organization>AITIA International Inc.</organization>
+			<organizationUrl>http://www.aitia.ai/</organizationUrl>
+		</developer>
+		
+		<developer>
+			<name>Gabor Majoros</name>
+			<email>gmajoros@aitia.ai</email>
+			<organization>AITIA International Inc.</organization>
+			<organizationUrl>http://www.aitia.ai/</organizationUrl>
+		</developer>
+		
+		<developer>
+			<name>Rajmund Bocsi</name>
+			<email>rbocsi@aitia.ai</email>
+			<organization>AITIA International Inc.</organization>
+			<organizationUrl>http://www.aitia.ai/</organizationUrl>
+		</developer>
+		
+		<developer>
+			<name>Szvetlin Tanyi</name>
+			<email>szvetlin@aitia.ai</email>
+			<organization>AITIA International Inc.</organization>
+			<organizationUrl>http://www.aitia.ai/</organizationUrl>
+		</developer>
+	</developers>
 	
-	<distributionManagement>
-		<repository>
-			<id>github</id>
-			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/arrowhead-f/client-library-java-spring</url>
-		</repository>
-	</distributionManagement>
+	<scm>
+		<connection>scm:git:git://github.com/eclipse-arrowhead/application-library-java-spring.git</connection>
+		<developerConnection>scm:git:ssh://github.com:eclipse-arrowhead/application-library-java-spring.git</developerConnection>
+		<url>http://github.com/eclipse-arrowhead/application-library-java-spring/tree/master</url>
+	</scm>
 	
 	<dependencies>
 		<dependency>
@@ -115,7 +144,33 @@
     			<configuration>
     				<skip>true</skip>
     			</configuration>
-  			</plugin>  			  			
-  		</plugins>
+  			</plugin>
+  			
+  			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+      			<artifactId>maven-source-plugin</artifactId>
+			    <executions>
+					<execution>
+				        <id>attach-sources</id>
+				        <goals>
+							<goal>jar-no-fork</goal>
+				        </goals>
+				     </execution>
+			    </executions>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
   	</build>	
 </project>
