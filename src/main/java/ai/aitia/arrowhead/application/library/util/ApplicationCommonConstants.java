@@ -18,7 +18,7 @@ public class ApplicationCommonConstants {
 	//=================================================================================================
 	// members
 
-	public static final String APPLICATION_SYSTEM_NAME = "application-system-name";
+	public static final String APPLICATION_SYSTEM_NAME = "application_system_name";
 	public static final String $APPLICATION_SYSTEM_NAME = "${" + APPLICATION_SYSTEM_NAME + "}";
 	public static final String APPLICATION_SERVER_ADDRESS = "server.address";
 	public static final String $APPLICATION_SERVER_ADDRESS_WD = "${" + APPLICATION_SERVER_ADDRESS + ": localhost" + "}";
