@@ -1,3 +1,4 @@
+rem TODO: create linux version too
 @echo OFF
 
 setlocal enableextensions enabledelayedexpansion
