@@ -686,7 +686,7 @@ public class ArrowheadService {
 
 	//-------------------------------------------------------------------------------------------------
 	private String getUriSchemeWS() {
-		return sslProperties.isSslEnabled() ? "wss" : "ws"; //TODO change string literals to CommonConstants.WSS/WS when core-client-skeleton lib is updated
+		return sslProperties.isSslEnabled() ? CommonConstants.WSS : CommonConstants.WS;
 	}
 	
 	//-------------------------------------------------------------------------------------------------
