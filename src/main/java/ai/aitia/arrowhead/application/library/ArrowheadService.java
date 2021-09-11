@@ -73,6 +73,12 @@ import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.UnavailableServerException;
 import eu.arrowhead.common.http.HttpService;
 
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+
 @Component("ArrowheadService")
 public class ArrowheadService {
 	
@@ -582,6 +588,41 @@ public class ArrowheadService {
 		}
 		
 		return false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Connect to MQTT broker.
+	 *
+	 * @param handler string id of the WebSocketConnectionManager
+	 * @return true if the connections success
+	 *
+	 * @throws InvalidParameterException if an error occures
+	 */
+	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final int port, final String clientId) throws Exception {
+		if (handler == null) {
+			throw new InvalidParameterException("handler cannot be null.");
+		}
+		if (Utilities.isEmpty(brokerAddress)) {
+			throw new InvalidParameterException("brokerAddress cannot be null or blank.");
+		}
+		if (port == 0) {
+			throw new InvalidParameterException("port cannot be zero.");
+		}
+		if (Utilities.isEmpty(clientId)) {
+			throw new InvalidParameterException("clientId cannot be null or blank.");
+		}
+
+		MemoryPersistence persistence = new MemoryPersistence();
+		final MqttClient client = new MqttClient(brokerAddress, clientId);
+		final MqttConnectOptions connOpts = new MqttConnectOptions();
+		connOpts.setCleanSession(true);
+		client.setCallback(handler);
+		
+		//logger.debug("Connecting to broker: " + brokerAddress);
+      	client.connect(connOpts);
+
+		return client;
 	}
 
 	//-------------------------------------------------------------------------------------------------
