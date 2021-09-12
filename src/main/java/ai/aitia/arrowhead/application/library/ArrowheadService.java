@@ -53,6 +53,7 @@ import ai.aitia.arrowhead.application.library.util.ApplicationCommonConstants;
 import ai.aitia.arrowhead.application.library.util.CoreServiceUri;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
+//import eu.arrowhead.common.SslUtil;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
@@ -106,6 +107,9 @@ public class ArrowheadService {
 	@Autowired
 	private SSLProperties sslProperties;
 	
+	//@Autowired
+	//private SslUtil sslUtil;
+
 	@Autowired
 	private HttpService httpService;
 	
@@ -602,7 +606,8 @@ public class ArrowheadService {
 	 *
 	 * @throws InvalidParameterException if an error occures
 	 */
-	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final int port, final String clientId) throws Exception {
+	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final int port, final String caFile,
+							final String certFile, final String keyFile, final String password, final String clientId) throws Exception {
 		if (handler == null) {
 			throw new InvalidParameterException("handler cannot be null.");
 		}
@@ -619,10 +624,19 @@ public class ArrowheadService {
 		final MemoryPersistence persistence = new MemoryPersistence();
 		final MqttClient client = new MqttClient(brokerAddress, clientId, persistence);
 		final MqttConnectOptions connOpts = new MqttConnectOptions();
+
+		if ( !Utilities.isEmpty(caFile) && !Utilities.isEmpty(certFile) && !Utilities.isEmpty(keyFile) ) {
+			try {
+				//connOpts.setSocketFactory(SslUtil.getSocketFactory(caFile, certFile, keyFile, password));
+			} catch(Exception err) {
+				System.out.println("MQTTS security exception: " + err);
+				System.exit(-1);
+			}
+		}
 		connOpts.setCleanSession(true);
 		client.setCallback(handler);
 		
-		logger.debug("Connecting to MQTT broker: " + brokerAddress);
+		logger.debug("Connecting to MQTT(S) broker: " + brokerAddress);
 		client.connect(connOpts);
 
 		return client;
