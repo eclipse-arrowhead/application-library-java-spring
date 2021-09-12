@@ -594,8 +594,11 @@ public class ArrowheadService {
 	/**
 	 * Connect to MQTT broker.
 	 *
-	 * @param handler string id of the WebSocketConnectionManager
-	 * @return true if the connections success
+	 * @param handler string id of the WebSocketcallback handler
+	 * @param brokerAddress address to the broker
+	 * @param port port to the broker
+	 * @param clientId the client name to use
+	 * @return an MQTTclient if successfull
 	 *
 	 * @throws InvalidParameterException if an error occures
 	 */
@@ -606,21 +609,21 @@ public class ArrowheadService {
 		if (Utilities.isEmpty(brokerAddress)) {
 			throw new InvalidParameterException("brokerAddress cannot be null or blank.");
 		}
-		if (port == 0) {
-			throw new InvalidParameterException("port cannot be zero.");
+		if (port <= 0) {
+			throw new InvalidParameterException("illegal port range.");
 		}
 		if (Utilities.isEmpty(clientId)) {
 			throw new InvalidParameterException("clientId cannot be null or blank.");
 		}
 
-		MemoryPersistence persistence = new MemoryPersistence();
-		final MqttClient client = new MqttClient(brokerAddress, clientId);
+		final MemoryPersistence persistence = new MemoryPersistence();
+		final MqttClient client = new MqttClient(brokerAddress, clientId, persistence);
 		final MqttConnectOptions connOpts = new MqttConnectOptions();
 		connOpts.setCleanSession(true);
 		client.setCallback(handler);
 		
-		//logger.debug("Connecting to broker: " + brokerAddress);
-      	client.connect(connOpts);
+		logger.debug("Connecting to MQTT broker: " + brokerAddress);
+		client.connect(connOpts);
 
 		return client;
 	}
