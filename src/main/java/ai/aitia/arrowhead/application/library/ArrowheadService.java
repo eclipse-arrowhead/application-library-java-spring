@@ -646,7 +646,7 @@ public class ArrowheadService {
 		connOpts.setCleanSession(true);
 		client.setCallback(handler);
 		
-		logger.debug("Connecting to MQTT(S) broker: " + brokerAddress);
+		logger.info("Connecting to MQTT(S) broker: " + brokerAddress);
 		client.connect(connOpts);
 
 		return client;
