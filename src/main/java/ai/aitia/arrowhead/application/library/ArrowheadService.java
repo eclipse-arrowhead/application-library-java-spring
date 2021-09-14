@@ -522,7 +522,7 @@ public class ArrowheadService {
 			throw new InvalidParameterException("Port must be between " + CommonConstants.SYSTEM_PORT_RANGE_MIN + " and " + CommonConstants.SYSTEM_PORT_RANGE_MAX + ".");
 		}
 
-		/* Handle query parameters */
+		// Handle query parameters
 		String[] validatedQueryParams;
 		if (queryParams == null) {
 			validatedQueryParams = new String[0];
@@ -530,7 +530,7 @@ public class ArrowheadService {
 			validatedQueryParams = queryParams;
 		}
 
-		/* prepare the URI */
+		// prepare the URI
 		UriComponents uri;
 		if(!Utilities.isEmpty(token)) {
 			final List<String> query = new ArrayList<>();
@@ -542,7 +542,7 @@ public class ArrowheadService {
 			uri = Utilities.createURI(getUriSchemeWS(), address, port, serviceUri, validatedQueryParams);
 		}
 
-		/* try to establish WS(S) connection */
+		// try to establish WS(S) connection
 		final StandardWebSocketClient wsClient = new StandardWebSocketClient();
 		if(sslProperties.isSslEnabled()) {
 			try {
