@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.UUID;
+import java.util.Properties;
 
 import javax.annotation.Resource;
 import javax.net.ssl.SSLContext;
@@ -53,7 +54,6 @@ import ai.aitia.arrowhead.application.library.util.ApplicationCommonConstants;
 import ai.aitia.arrowhead.application.library.util.CoreServiceUri;
 import eu.arrowhead.common.CommonConstants;
 import eu.arrowhead.common.SSLProperties;
-//import eu.arrowhead.common.SslUtil;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
@@ -78,6 +78,7 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.internal.security.SSLSocketFactoryFactory;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 @Component("ArrowheadService")
@@ -107,9 +108,6 @@ public class ArrowheadService {
 	@Autowired
 	private SSLProperties sslProperties;
 	
-	//@Autowired
-	//private SslUtil sslUtil;
-
 	@Autowired
 	private HttpService httpService;
 	
@@ -573,7 +571,6 @@ public class ArrowheadService {
 	 *
 	 * @param wsManagerId string id of the WebSocketConnectionManager
 	 * @return true if and only if the connection was alive, otherwise false
-	 *
 	 * @throws InvalidParameterException when wsManagerId is null or blank..
 	 */
 	public boolean closeWSConnection(final String wsManagerId) {
@@ -598,13 +595,13 @@ public class ArrowheadService {
 	/**
 	 * Connect to MQTT broker.
 	 *
-	 * @param handler string id of the WebSocketcallback handler
+	 * @param handler string id of the MqttCallback handler
 	 * @param brokerAddress address to the broker
 	 * @param port port to the broker
 	 * @param clientId the client name to use
 	 * @return an MQTTclient if successfull
-	 *
-	 * @throws InvalidParameterException if an error occures
+	 * @throws InvalidParameterException if a parameter error occures
+	 * @throws ArrowheadException if a certificate error occurs
 	 */
 	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final int port, final String caFile,
 							final String certFile, final String keyFile, final String password, final String clientId) throws Exception {
@@ -620,17 +617,30 @@ public class ArrowheadService {
 		if (Utilities.isEmpty(clientId)) {
 			throw new InvalidParameterException("clientId cannot be null or blank.");
 		}
+		if (port < CommonConstants.SYSTEM_PORT_RANGE_MIN || port > CommonConstants.SYSTEM_PORT_RANGE_MAX){
+			throw new InvalidParameterException("Port must be between " + CommonConstants.SYSTEM_PORT_RANGE_MIN + " and " + CommonConstants.SYSTEM_PORT_RANGE_MAX + ".");
+		}
 
 		final MemoryPersistence persistence = new MemoryPersistence();
 		final MqttClient client = new MqttClient(brokerAddress, clientId, persistence);
 		final MqttConnectOptions connOpts = new MqttConnectOptions();
 
-		if ( !Utilities.isEmpty(caFile) && !Utilities.isEmpty(certFile) && !Utilities.isEmpty(keyFile) ) {
+		if(sslProperties.isSslEnabled()) {
 			try {
-				//connOpts.setSocketFactory(SslUtil.getSocketFactory(caFile, certFile, keyFile, password));
+				Properties sslMQTTProperties = new Properties();
+				final KeyStore keyStore = getKeyStore();
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORE, keyStore);
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTOREPWD, sslProperties.getKeyStorePassword());
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORETYPE, "JKS");
+				final KeyStore trustStore = getTrustStore();
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORE, trustStore);
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTOREPWD, sslProperties.getTrustStorePassword());
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORETYPE, "JKS");
+
+				connOpts.setSSLProperties(sslMQTTProperties);
 			} catch(Exception err) {
-				System.out.println("MQTTS security exception: " + err);
-				System.exit(-1);
+				logger.error("MQTTS security exception: " + err);
+				throw new ArrowheadException("Bad certificate settings");
 			}
 		}
 		connOpts.setCleanSession(true);
@@ -640,6 +650,38 @@ public class ArrowheadService {
 		client.connect(connOpts);
 
 		return client;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Close connection and release resources
+	 *
+	 * @param client the client to close
+	 * @throws Exception
+	 */
+	public void closeMQTTBroker(final MqttClient client) throws Exception {
+		if (client == null) {
+			throw new InvalidParameterException("client cannot be null.");
+		}
+
+		logger.info("Closing client");
+		client.close();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Disconnect from MQTT broker
+	 *
+	 * @param client the client to disconnect
+	 * @throws Exception
+	 */
+	public void disconnectMQTTBroker(final MqttClient client) throws Exception {
+		if (client == null) {
+			throw new InvalidParameterException("client cannot be null.");
+		}
+
+		logger.info("Disconnecting from MQTT broker");
+		client.disconnect();
 	}
 
 	//-------------------------------------------------------------------------------------------------
