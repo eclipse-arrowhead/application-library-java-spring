@@ -599,12 +599,12 @@ public class ArrowheadService {
 	 * @param brokerAddress address to the broker
 	 * @param port port to the broker
 	 * @param clientId the client name to use
+	 * @param password the password
 	 * @return an MQTTclient if successfull
 	 * @throws InvalidParameterException if a parameter error occures
 	 * @throws ArrowheadException if a certificate error occurs
 	 */
-	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final int port, final String caFile,
-							final String certFile, final String keyFile, final String password, final String clientId) throws Exception {
+	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final int port, final String clientId, final String password) throws Exception {
 		if (handler == null) {
 			throw new InvalidParameterException("handler cannot be null.");
 		}
