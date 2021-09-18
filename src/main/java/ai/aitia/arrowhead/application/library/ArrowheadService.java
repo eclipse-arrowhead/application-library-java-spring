@@ -604,7 +604,8 @@ public class ArrowheadService {
 	 * @throws InvalidParameterException if a parameter error occures
 	 * @throws ArrowheadException if a certificate error occurs
 	 */
-	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final int port, final String clientId, final String password) throws Exception {
+	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final String mqttBrokerUsername, final String mqttBrokerPassword, final int port, final String clientId, 
+								final String keyStore, final String keyStorePassword, final String trustStore, final String trustStorePassword) throws Exception {
 		if (handler == null) {
 			throw new InvalidParameterException("handler cannot be null.");
 		}
@@ -625,16 +626,20 @@ public class ArrowheadService {
 		final MqttClient client = new MqttClient(brokerAddress, clientId, persistence);
 		final MqttConnectOptions connOpts = new MqttConnectOptions();
 
+		if(!Utilities.isEmpty(mqttBrokerUsername) && !Utilities.isEmpty(mqttBrokerPassword)) {
+			connOpts.setUserName(mqttBrokerUsername);
+			connOpts.setPassword(mqttBrokerPassword.toCharArray());
+		}
+
 		if(sslProperties.isSslEnabled()) {
 			try {
 				Properties sslMQTTProperties = new Properties();
-				final KeyStore keyStore = getKeyStore();
 				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORE, keyStore);
-				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTOREPWD, sslProperties.getKeyStorePassword());
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTOREPWD, keyStorePassword);
 				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORETYPE, "JKS");
-				final KeyStore trustStore = getTrustStore();
+
 				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORE, trustStore);
-				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTOREPWD, sslProperties.getTrustStorePassword());
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTOREPWD, trustStorePassword);
 				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORETYPE, "JKS");
 
 				connOpts.setSSLProperties(sslMQTTProperties);
