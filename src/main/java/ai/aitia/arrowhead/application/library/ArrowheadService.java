@@ -612,9 +612,6 @@ public class ArrowheadService {
 		if (Utilities.isEmpty(brokerAddress)) {
 			throw new InvalidParameterException("brokerAddress cannot be null or blank.");
 		}
-		if (port <= 0) {
-			throw new InvalidParameterException("illegal port range.");
-		}
 		if (Utilities.isEmpty(clientId)) {
 			throw new InvalidParameterException("clientId cannot be null or blank.");
 		}
