@@ -24,3 +24,4 @@ In case of a maven project copy the following into the `<dependencies>` element 
 ```
 Or look for other Maven Central based solutions such as Gradle, Scala SBT, Apache Ivy and so on. 
 
+### `Boost your project by the:` [Arrowhead Application Skeletons](https://github.com/arrowhead-f/application-skeleton-java-spring)
