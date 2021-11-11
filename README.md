@@ -22,5 +22,5 @@ In case of a maven project copy the following into the `<dependencies>` element 
    <version>4.4.0.0</version>
 </dependency>
 ```
-Or look for other Maven Central based solution such as Gradle, Scala SBT, Apache Ivy and so on. 
+Or look for other Maven Central based solutions such as Gradle, Scala SBT, Apache Ivy and so on. 
 
