@@ -596,11 +596,12 @@ public class ArrowheadService {
 	 *
 	 * @param handler string id of the MqttCallback handler
 	 * @param brokerAddress address to the broker
+	 * @param mqttBrokerUsername user name to the broker if necessary
+	 * @param mqttBrokerPassword password to the broker if necessary
 	 * @param port port to the broker
 	 * @param clientId the client name to use
-	 * @param password the password
 	 * @return an MQTTclient if successful
-	 * @throws MqttException
+	 * @throws MqttException if communication related error occurs
 	 * @throws InvalidParameterException if a parameter error occurs
 	 * @throws ArrowheadException if a certificate error occurs
 	 */
@@ -658,7 +659,7 @@ public class ArrowheadService {
 	 * Close connection and release resources
 	 *
 	 * @param client the client to close
-	 * @throws MqttException 
+	 * @throws MqttException if the client is not disconnected
 	 */
 	public void closeMQTTBroker(final MqttClient client) throws MqttException {
 		if (client == null) {
@@ -674,7 +675,7 @@ public class ArrowheadService {
 	 * Disconnect from MQTT broker
 	 *
 	 * @param client the client to disconnect
-	 * @throws MqttException
+	 * @throws MqttException if a problem is encountered while disconnecting
 	 */
 	public void disconnectMQTTBroker(final MqttClient client) throws MqttException {
 		if (client == null) {
