@@ -26,9 +26,9 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.UUID;
-import java.util.Properties;
 
 import javax.annotation.Resource;
 import javax.net.ssl.SSLContext;
@@ -37,6 +37,12 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.internal.security.SSLSocketFactoryFactory;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -73,13 +79,6 @@ import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.UnavailableServerException;
 import eu.arrowhead.common.http.HttpService;
-
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.internal.security.SSLSocketFactoryFactory;
-import org.eclipse.paho.client.mqttv3.MqttException;
 
 @Component("ArrowheadService")
 public class ArrowheadService {
@@ -600,12 +599,12 @@ public class ArrowheadService {
 	 * @param port port to the broker
 	 * @param clientId the client name to use
 	 * @param password the password
-	 * @return an MQTTclient if successfull
-	 * @throws InvalidParameterException if a parameter error occures
+	 * @return an MQTTclient if successful
+	 * @throws MqttException
+	 * @throws InvalidParameterException if a parameter error occurs
 	 * @throws ArrowheadException if a certificate error occurs
 	 */
-	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final String mqttBrokerUsername, final String mqttBrokerPassword, final int port, final String clientId, 
-								final String keyStore, final String keyStorePassword, final String trustStore, final String trustStorePassword) throws Exception {
+	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final String mqttBrokerUsername, final String mqttBrokerPassword, final int port, final String clientId) throws MqttException {
 		if (handler == null) {
 			throw new InvalidParameterException("handler cannot be null.");
 		}
@@ -631,13 +630,13 @@ public class ArrowheadService {
 		if(sslProperties.isSslEnabled()) {
 			try {
 				Properties sslMQTTProperties = new Properties();
-				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORE, keyStore);
-				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTOREPWD, keyStorePassword);
-				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORETYPE, "JKS");
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORE, sslProperties.getKeyStore().getFile().getAbsolutePath());
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTOREPWD, sslProperties.getKeyPassword());
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORETYPE, sslProperties.getKeyStoreType());
 
-				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORE, trustStore);
-				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTOREPWD, trustStorePassword);
-				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORETYPE, "JKS");
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORE, sslProperties.getTrustStore().getFile().getAbsolutePath());
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTOREPWD, sslProperties.getTrustStorePassword());
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORETYPE, sslProperties.getKeyStoreType()); //intentionally the same
 
 				connOpts.setSSLProperties(sslMQTTProperties);
 			} catch(Exception err) {
@@ -659,9 +658,9 @@ public class ArrowheadService {
 	 * Close connection and release resources
 	 *
 	 * @param client the client to close
-	 * @throws Exception
+	 * @throws MqttException 
 	 */
-	public void closeMQTTBroker(final MqttClient client) throws Exception {
+	public void closeMQTTBroker(final MqttClient client) throws MqttException {
 		if (client == null) {
 			throw new InvalidParameterException("client cannot be null.");
 		}
@@ -675,9 +674,9 @@ public class ArrowheadService {
 	 * Disconnect from MQTT broker
 	 *
 	 * @param client the client to disconnect
-	 * @throws Exception
+	 * @throws MqttException
 	 */
-	public void disconnectMQTTBroker(final MqttClient client) throws Exception {
+	public void disconnectMQTTBroker(final MqttClient client) throws MqttException {
 		if (client == null) {
 			throw new InvalidParameterException("client cannot be null.");
 		}
