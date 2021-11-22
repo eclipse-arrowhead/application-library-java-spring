@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.UUID;
+import java.util.Properties;
 
 import javax.annotation.Resource;
 import javax.net.ssl.SSLContext;
@@ -72,6 +73,13 @@ import eu.arrowhead.common.exception.BadPayloadException;
 import eu.arrowhead.common.exception.InvalidParameterException;
 import eu.arrowhead.common.exception.UnavailableServerException;
 import eu.arrowhead.common.http.HttpService;
+
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.internal.security.SSLSocketFactoryFactory;
+import org.eclipse.paho.client.mqttv3.MqttException;
 
 @Component("ArrowheadService")
 public class ArrowheadService {
@@ -514,7 +522,7 @@ public class ArrowheadService {
 			throw new InvalidParameterException("Port must be between " + CommonConstants.SYSTEM_PORT_RANGE_MIN + " and " + CommonConstants.SYSTEM_PORT_RANGE_MAX + ".");
 		}
 
-		/* Handle query parameters */
+		// Handle query parameters
 		String[] validatedQueryParams;
 		if (queryParams == null) {
 			validatedQueryParams = new String[0];
@@ -522,7 +530,7 @@ public class ArrowheadService {
 			validatedQueryParams = queryParams;
 		}
 
-		/* prepare the URI */
+		// prepare the URI
 		UriComponents uri;
 		if(!Utilities.isEmpty(token)) {
 			final List<String> query = new ArrayList<>();
@@ -534,7 +542,7 @@ public class ArrowheadService {
 			uri = Utilities.createURI(getUriSchemeWS(), address, port, serviceUri, validatedQueryParams);
 		}
 
-		/* try to establish WS(S) connection */
+		// try to establish WS(S) connection
 		final StandardWebSocketClient wsClient = new StandardWebSocketClient();
 		if(sslProperties.isSslEnabled()) {
 			try {
@@ -563,7 +571,6 @@ public class ArrowheadService {
 	 *
 	 * @param wsManagerId string id of the WebSocketConnectionManager
 	 * @return true if and only if the connection was alive, otherwise false
-	 *
 	 * @throws InvalidParameterException when wsManagerId is null or blank..
 	 */
 	public boolean closeWSConnection(final String wsManagerId) {
@@ -582,6 +589,101 @@ public class ArrowheadService {
 		}
 		
 		return false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Connect to MQTT broker.
+	 *
+	 * @param handler string id of the MqttCallback handler
+	 * @param brokerAddress address to the broker
+	 * @param port port to the broker
+	 * @param clientId the client name to use
+	 * @param password the password
+	 * @return an MQTTclient if successfull
+	 * @throws InvalidParameterException if a parameter error occures
+	 * @throws ArrowheadException if a certificate error occurs
+	 */
+	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final String mqttBrokerUsername, final String mqttBrokerPassword, final int port, final String clientId, 
+								final String keyStore, final String keyStorePassword, final String trustStore, final String trustStorePassword) throws Exception {
+		if (handler == null) {
+			throw new InvalidParameterException("handler cannot be null.");
+		}
+		if (Utilities.isEmpty(brokerAddress)) {
+			throw new InvalidParameterException("brokerAddress cannot be null or blank.");
+		}
+		if (Utilities.isEmpty(clientId)) {
+			throw new InvalidParameterException("clientId cannot be null or blank.");
+		}
+		if (port < CommonConstants.SYSTEM_PORT_RANGE_MIN || port > CommonConstants.SYSTEM_PORT_RANGE_MAX){
+			throw new InvalidParameterException("Port must be between " + CommonConstants.SYSTEM_PORT_RANGE_MIN + " and " + CommonConstants.SYSTEM_PORT_RANGE_MAX + ".");
+		}
+
+		final MemoryPersistence persistence = new MemoryPersistence();
+		final MqttClient client = new MqttClient(brokerAddress, clientId, persistence);
+		final MqttConnectOptions connOpts = new MqttConnectOptions();
+
+		if(!Utilities.isEmpty(mqttBrokerUsername) && !Utilities.isEmpty(mqttBrokerPassword)) {
+			connOpts.setUserName(mqttBrokerUsername);
+			connOpts.setPassword(mqttBrokerPassword.toCharArray());
+		}
+
+		if(sslProperties.isSslEnabled()) {
+			try {
+				Properties sslMQTTProperties = new Properties();
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORE, keyStore);
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTOREPWD, keyStorePassword);
+				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORETYPE, "JKS");
+
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORE, trustStore);
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTOREPWD, trustStorePassword);
+				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORETYPE, "JKS");
+
+				connOpts.setSSLProperties(sslMQTTProperties);
+			} catch(Exception err) {
+				logger.error("MQTTS security exception: " + err);
+				throw new ArrowheadException("Bad certificate settings");
+			}
+		}
+		connOpts.setCleanSession(true);
+		client.setCallback(handler);
+		
+		logger.info("Connecting to MQTT(S) broker: " + brokerAddress);
+		client.connect(connOpts);
+
+		return client;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Close connection and release resources
+	 *
+	 * @param client the client to close
+	 * @throws Exception
+	 */
+	public void closeMQTTBroker(final MqttClient client) throws Exception {
+		if (client == null) {
+			throw new InvalidParameterException("client cannot be null.");
+		}
+
+		logger.info("Closing client");
+		client.close();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Disconnect from MQTT broker
+	 *
+	 * @param client the client to disconnect
+	 * @throws Exception
+	 */
+	public void disconnectMQTTBroker(final MqttClient client) throws Exception {
+		if (client == null) {
+			throw new InvalidParameterException("client cannot be null.");
+		}
+
+		logger.info("Disconnecting from MQTT broker");
+		client.disconnect();
 	}
 
 	//-------------------------------------------------------------------------------------------------
