@@ -28,10 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.UUID;
-import java.util.Properties;
 
 import javax.annotation.Resource;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
@@ -599,13 +599,11 @@ public class ArrowheadService {
 	 * @param brokerAddress address to the broker
 	 * @param port port to the broker
 	 * @param clientId the client name to use
-	 * @param password the password
-	 * @return an MQTTclient if successfull
+	 * @return an MQTTClient, if successfull
 	 * @throws InvalidParameterException if a parameter error occures
 	 * @throws ArrowheadException if a certificate error occurs
 	 */
-	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final String mqttBrokerUsername, final String mqttBrokerPassword, final int port, final String clientId, 
-								final String keyStore, final String keyStorePassword, final String trustStore, final String trustStorePassword) throws Exception {
+	public MqttClient connectMQTTBroker(final MqttCallback handler, final String brokerAddress, final int brokerPort, final String mqttBrokerUsername, final String mqttBrokerPassword, final String clientId /*, final String keyStore, final String keyStorePassword, final String trustStore, final String trustStorePassword*/) throws Exception {
 		if (handler == null) {
 			throw new InvalidParameterException("handler cannot be null.");
 		}
@@ -615,12 +613,7 @@ public class ArrowheadService {
 		if (Utilities.isEmpty(clientId)) {
 			throw new InvalidParameterException("clientId cannot be null or blank.");
 		}
-		if (port < CommonConstants.SYSTEM_PORT_RANGE_MIN || port > CommonConstants.SYSTEM_PORT_RANGE_MAX){
-			throw new InvalidParameterException("Port must be between " + CommonConstants.SYSTEM_PORT_RANGE_MIN + " and " + CommonConstants.SYSTEM_PORT_RANGE_MAX + ".");
-		}
 
-		final MemoryPersistence persistence = new MemoryPersistence();
-		final MqttClient client = new MqttClient(brokerAddress, clientId, persistence);
 		final MqttConnectOptions connOpts = new MqttConnectOptions();
 
 		if(!Utilities.isEmpty(mqttBrokerUsername) && !Utilities.isEmpty(mqttBrokerPassword)) {
@@ -628,9 +621,11 @@ public class ArrowheadService {
 			connOpts.setPassword(mqttBrokerPassword.toCharArray());
 		}
 
-		if(sslProperties.isSslEnabled()) {
+    	String brokerUri = "tcp://" + brokerAddress + ":" + brokerPort;
+		if( sslProperties.isSslEnabled() ) {
+      		brokerUri = "ssl://" + brokerAddress + ":" + brokerPort;
 			try {
-				Properties sslMQTTProperties = new Properties();
+				/*Properties sslMQTTProperties = new Properties();
 				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORE, keyStore);
 				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTOREPWD, keyStorePassword);
 				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORETYPE, "JKS");
@@ -639,20 +634,47 @@ public class ArrowheadService {
 				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTOREPWD, trustStorePassword);
 				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORETYPE, "JKS");
 
-				connOpts.setSSLProperties(sslMQTTProperties);
+				connOpts.setSSLProperties(sslMQTTProperties);*/
+        		final SSLSocketFactory socketFactory = getSocketFactory();
+        		connOpts.setSocketFactory(socketFactory);
 			} catch(Exception err) {
 				logger.error("MQTTS security exception: " + err);
 				throw new ArrowheadException("Bad certificate settings");
 			}
 		}
 		connOpts.setCleanSession(true);
+		final MemoryPersistence persistence = new MemoryPersistence();
+		final MqttClient client = new MqttClient(brokerUri, clientId, persistence);
 		client.setCallback(handler);
 		
 		logger.info("Connecting to MQTT(S) broker: " + brokerAddress);
+    	String[] brokers = {brokerUri};
+//    	connOpts.setServerURIs(brokers);
 		client.connect(connOpts);
 
 		return client;
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Returns an SSLfactory from the system's key and trust stores
+	 *
+	 * @return An SSLfactory
+	 * @throws Exception
+	 */
+  	private SSLSocketFactory getSocketFactory() throws Exception {
+    	try {
+	    	X509Certificate caCert = null;
+		  	final KeyStore trustStore = getTrustStore();
+  			final KeyStore keyStore = getKeyStore();
+  			final TrustStrategy acceptingTrustStrategy = (final X509Certificate[] chain, final String authType) -> true;
+	 		final SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(trustStore, acceptingTrustStrategy).loadKeyMaterial(keyStore, 
+                                    sslProperties.getKeyStorePassword().toCharArray()).build();
+      		return sslContext.getSocketFactory();
+    	} catch (final Exception e) {
+      		throw new ArrowheadException("Certificate failure");
+    	}
+  	}
 
 	//-------------------------------------------------------------------------------------------------
 	/**
