@@ -10,7 +10,7 @@
 	
 	<groupId>ai.aitia</groupId>	
 	<artifactId>arrowhead-application-library-java-spring</artifactId>
-	<version>4.4.0.0</version>
+	<version>4.4.0.1</version>
 	<packaging>jar</packaging>
 	
 	<name>application-library-java-spring</name>
@@ -60,6 +60,10 @@
 		<url>http://github.com/eclipse-arrowhead/application-library-java-spring/tree/master</url>
 	</scm>
 	
+	<properties>
+		<log4j2.version>2.17.0</log4j2.version>
+	</properties>
+	
 	<dependencies>
 		<dependency>
   			<groupId>ai.aitia</groupId>
@@ -89,9 +93,9 @@
 		</dependency>
 		
 		<dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-    </dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+		</dependency>
 		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -111,15 +115,21 @@
 		</dependency>
 		
 		<dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-websocket</artifactId>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-websocket</artifactId>
 		</dependency>
 
 		<dependency>
-	    <groupId>org.bitbucket.b_c</groupId>
-	    <artifactId>jose4j</artifactId>
-	    <version>0.6.5</version>
-	  </dependency>	    
+			<groupId>org.eclipse.paho</groupId>
+			<artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+			<version>1.2.5</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bitbucket.b_c</groupId>
+			<artifactId>jose4j</artifactId>
+			<version>0.6.5</version>
+		</dependency>	    
 	    
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
