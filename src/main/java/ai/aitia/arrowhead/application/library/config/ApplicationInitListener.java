@@ -60,13 +60,6 @@ public abstract class ApplicationInitListener {
 	// methods
 
 	//-------------------------------------------------------------------------------------------------
-	@Bean(CommonConstants.ARROWHEAD_CONTEXT)
-	@DependsOn("ArrowheadService")
-	public Map<String,Object> getArrowheadContext() {
-		return new ConcurrentHashMap<>();
-	}
-	
-	//-------------------------------------------------------------------------------------------------
 	@EventListener
 	@Order(10)
 	public void onApplicationEvent(final ContextRefreshedEvent event) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InterruptedException {
