@@ -19,7 +19,7 @@ In case of a maven project copy the following into the `<dependencies>` element 
 <dependency>
    <groupId>ai.aitia</groupId>
    <artifactId>arrowhead-application-library-java-spring</artifactId>
-   <version>4.4.0.1</version>
+   <version>4.4.0.2</version>
 </dependency>
 ```
 Or look for other Maven Central based solutions such as Gradle, Scala SBT, Apache Ivy and so on. 
