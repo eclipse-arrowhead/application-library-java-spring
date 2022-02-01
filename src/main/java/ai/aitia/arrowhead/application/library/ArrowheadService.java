@@ -73,6 +73,7 @@ import eu.arrowhead.common.dto.shared.ServiceRegistryRequestDTO;
 import eu.arrowhead.common.dto.shared.ServiceRegistryResponseDTO;
 import eu.arrowhead.common.dto.shared.SubscriptionRequestDTO;
 import eu.arrowhead.common.dto.shared.SystemRequestDTO;
+import eu.arrowhead.common.dto.shared.SystemResponseDTO;
 import eu.arrowhead.common.exception.ArrowheadException;
 import eu.arrowhead.common.exception.AuthException;
 import eu.arrowhead.common.exception.BadPayloadException;
@@ -282,6 +283,70 @@ public class ArrowheadService {
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PORT, List.of(String.valueOf(applicationSystemPort)));
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_DEFINITION, List.of(serviceDefinition));
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SERVICE_URI, List.of(_serviceUri));
+		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, queryMap, unregisterUriStr);
+		
+		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'register-system' request to Service Registry Core System.
+	 * 
+	 * @param request SystemRequestDTO which represents the required payload of the http(s) request
+	 * @return the SystemResponseDTO received from Service Registry Core System
+	 * @throws AuthException when you are not authorized by Service Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
+	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
+	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 */
+	public SystemResponseDTO registerSystemToServiceRegistry(final SystemRequestDTO request) {
+		final String registerUriStr = CommonConstants.SERVICEREGISTRY_URI + CommonConstants.OP_SERVICEREGISTRY_REGISTER_SYSTEM_URI;
+		final UriComponents registerUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, registerUriStr);
+		
+		return httpService.sendRequest(registerUri, HttpMethod.POST, SystemResponseDTO.class, request).getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'register-system' request to Service Registry Core System. In the case of service already registered, then the old service registry entry will be overwritten.
+	 * 
+	 * @param request SystemRequestDTO which represents the required payload of the http(s) request
+	 * @return the SystemResponseDTO received from Service Registry Core System
+	 * @throws AuthException when you are not authorized by Service Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
+	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
+	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 */
+	public SystemResponseDTO forceRegisterSystemToServiceRegistry(final SystemRequestDTO request) {
+		final String registerUriStr = CommonConstants.SERVICEREGISTRY_URI + CommonConstants.OP_SERVICEREGISTRY_REGISTER_SYSTEM_URI;
+		final UriComponents registerUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, registerUriStr);
+		
+		try {
+			return httpService.sendRequest(registerUri, HttpMethod.POST, SystemResponseDTO.class, request).getBody();			
+		} catch (final InvalidParameterException ex) {
+			unregisterSystemFromServiceRegistry();
+			return httpService.sendRequest(registerUri, HttpMethod.POST, SystemResponseDTO.class, request).getBody();
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'unregister-system' request to Service Registry Core System.
+	 * 
+	 * @throws AuthException when you are not authorized by Service Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
+	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
+	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 */
+	public void unregisterSystemFromServiceRegistry() {
+		final String unregisterUriStr = CommonConstants.SERVICEREGISTRY_URI + CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_SYSTEM_URI;
+		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(5);
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SYSTEM_NAME, List.of(applicationSystemName));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_ADDRESS, List.of(applicationSystemAddress));
+		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PORT, List.of(String.valueOf(applicationSystemPort)));
 		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, queryMap, unregisterUriStr);
 		
 		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
