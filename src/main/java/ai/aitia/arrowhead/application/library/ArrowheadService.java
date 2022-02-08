@@ -72,6 +72,8 @@ import eu.arrowhead.common.dto.shared.ServiceQueryResultDTO;
 import eu.arrowhead.common.dto.shared.ServiceRegistryRequestDTO;
 import eu.arrowhead.common.dto.shared.ServiceRegistryResponseDTO;
 import eu.arrowhead.common.dto.shared.SubscriptionRequestDTO;
+import eu.arrowhead.common.dto.shared.SystemRegistryRequestDTO;
+import eu.arrowhead.common.dto.shared.SystemRegistryResponseDTO;
 import eu.arrowhead.common.dto.shared.SystemRequestDTO;
 import eu.arrowhead.common.dto.shared.SystemResponseDTO;
 import eu.arrowhead.common.exception.ArrowheadException;
@@ -350,6 +352,77 @@ public class ArrowheadService {
 		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), serviceReqistryAddress, serviceRegistryPort, queryMap, unregisterUriStr);
 		
 		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'system-register' request to System Registry Core System.
+	 * 
+	 * @param request SystemRegistryRequestDTO which represents the required payload of the http(s) request
+	 * @return the SystemRegistryResponseDTO received from System Registry Core System
+	 * @throws AuthException when you are not authorized by Service Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
+	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
+	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 */
+	public SystemRegistryResponseDTO registerSystemToSystemRegistry(final SystemRegistryRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_REGISTER_SERVICE);
+		if (uri == null) {
+			logger.debug("System registration couldn't be proceeded due to the following reason: " +  CoreSystemService.SYSTEMREGISTRY_REGISTER_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, SystemRegistryResponseDTO.class, request).getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'system-register' request to System Registry Core System. In the case of system is already registered, then the old system registry entry will be overwritten.
+	 * 
+	 * @param request SystemRegistryRequestDTO which represents the required payload of the http(s) request
+	 * @return the SystemRegistryResponseDTO received from System Registry Core System
+	 * @throws AuthException when you are not authorized by Service Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
+	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
+	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 */
+	public SystemRegistryResponseDTO forceRegisterSystemToSystemRegistry(final SystemRegistryRequestDTO request) {
+		try {
+			return registerSystemToSystemRegistry(request);			
+		} catch (final InvalidParameterException ex) {
+			unregisterSystemFromSystemRegistry();
+			return registerSystemToSystemRegistry(request);
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'system-unregister' request to System Registry Core System.
+	 * 
+	 * @return true if successfully deregistered or false if the service is not known by Arrowhead Context
+	 * @throws AuthException when you are not authorized by Service Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
+	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
+	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 */
+	public boolean unregisterSystemFromSystemRegistry() {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_UNREGISTER_SERVICE);
+		if (uri == null) {
+			logger.debug("System deregistration couldn't be proceeded due to the following reason: " +  CoreSystemService.SYSTEMREGISTRY_UNREGISTER_SERVICE.name() + " not known by Arrowhead Context");
+			return false;
+		}
+		
+		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(5);
+		queryMap.put(CommonConstants.OP_SYSTEMREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_SYSTEM_NAME, List.of(applicationSystemName));
+		queryMap.put(CommonConstants.OP_SYSTEMREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_ADDRESS, List.of(applicationSystemAddress));
+		queryMap.put(CommonConstants.OP_SYSTEMREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_PORT, List.of(String.valueOf(applicationSystemPort)));
+		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), queryMap, uri.getPath());
+		
+		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
+		return true;
 	}
 	
 	//-------------------------------------------------------------------------------------------------
