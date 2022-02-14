@@ -128,7 +128,7 @@ public class ArrowheadService {
 	private final Logger logger = LogManager.getLogger(ArrowheadService.class);
 	
 	//=================================================================================================
-	// methods
+	// General Core System services and support methods
 
 	//------------------------------------------------------------------------------------------------
 	/**
@@ -227,6 +227,9 @@ public class ArrowheadService {
 		}
 		return true;
 	}
+	
+	//=================================================================================================
+	// Service Registry Services
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
@@ -363,6 +366,9 @@ public class ArrowheadService {
 		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
 	}
 	
+	//=================================================================================================
+	// Authorization Services
+	
 	//-------------------------------------------------------------------------------------------------
 	/**
 	 * Queries its public key from Authorization Core System. 
@@ -385,46 +391,8 @@ public class ArrowheadService {
 		return Utilities.getPublicKeyFromBase64EncodedString(encodedKey);
 	}
 	
-	//-------------------------------------------------------------------------------------------------
-	/** 
-	 * @return your public key or null when https mode is not enabled
-	 */
-	public PublicKey getMyPublicKey() {
-		if (sslProperties.isSslEnabled()) {
-			return (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
-		} else {
-			return null;
-		}
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/** 
-	 * @return your private key or null when https mode is not enabled
-	 */
-	public PrivateKey getMyPrivateKey() {
-		if (sslProperties.isSslEnabled()) {
-			return (PrivateKey) arrowheadContext.get(CommonConstants.SERVER_PRIVATE_KEY);
-		} else {
-			return null;
-		}
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/**
-	 * @return an Orchestration form builder prefilled with your system properties
-	 */
-	public Builder getOrchestrationFormBuilder() {
-		final SystemRequestDTO thisSystem = new SystemRequestDTO();
-		thisSystem.setSystemName(applicationSystemName);
-		thisSystem.setAddress(applicationSystemAddress);
-		thisSystem.setPort(applicationSystemPort);
-		if (sslProperties.isSslEnabled()) {
-			final PublicKey publicKey = (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
-			thisSystem.setAuthenticationInfo(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
-		}
-		
-		return new OrchestrationFormRequestDTO.Builder(thisSystem);
-	}
+	//=================================================================================================
+	// Orchestrator Services
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
@@ -469,6 +437,9 @@ public class ArrowheadService {
 		
 		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath() + "/" + systemId), HttpMethod.GET, OrchestrationResponseDTO.class).getBody();
 	}
+	
+	//=================================================================================================
+	// System Registry Services
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
@@ -543,6 +514,51 @@ public class ArrowheadService {
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
+	 * Sends a http(s) 'system-onboarding-with-name' request to System Registry Core System.
+	 * 
+	 * @param request SystemRegistryOnboardingWithNameRequestDTO which represents the required payload of the http(s) request
+	 * @return the DeviceRegistryOnboardingWithNameResponseDTO received from System Registry Core System
+	 * @throws AuthException when you are not authorized by System Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
+	 * @throws ArrowheadException when internal server error happened at System Registry Core System
+	 * @throws UnavailableServerException when System Registry Core System is not available
+	 */
+	public SystemRegistryOnboardingWithNameResponseDTO onboardSystemWithName(final SystemRegistryOnboardingWithNameRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_NAME_SERVICE);
+		if (uri == null) {
+			logger.debug("Onboarding of system couldn't be proceeded due to the following reason: " +  CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_NAME_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, SystemRegistryOnboardingWithNameResponseDTO.class, request).getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'system-onboarding-with-csr' request to System Registry Core System.
+	 * 
+	 * @param request SystemRegistryOnboardingWithCsrRequestDTO which represents the required payload of the http(s) request
+	 * @return the SystemRegistryOnboardingWithCsrRequestDTO received from System Registry Core System
+	 * @throws AuthException when you are not authorized by System Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
+	 * @throws ArrowheadException when internal server error happened at System Registry Core System
+	 * @throws UnavailableServerException when System Registry Core System is not available
+	 */
+	public SystemRegistryOnboardingWithCsrRequestDTO onboardSystemWithCSR(final SystemRegistryOnboardingWithCsrRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_CSR_SERVICE);
+		if (uri == null) {
+			logger.debug("Onboarding of system couldn't be proceeded due to the following reason: " +  CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_CSR_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, SystemRegistryOnboardingWithCsrRequestDTO.class, request).getBody();
+	}
+	
+	//=================================================================================================
+	// Device Registry Services
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
 	 * Sends a http(s) 'device-register' request to Device Registry Core System.
 	 * 
 	 * @param request DeviceRegistryRequestDTO which represents the required payload of the http(s) request
@@ -592,48 +608,6 @@ public class ArrowheadService {
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * Sends a http(s) 'system-onboarding-with-name' request to System Registry Core System.
-	 * 
-	 * @param request SystemRegistryOnboardingWithNameRequestDTO which represents the required payload of the http(s) request
-	 * @return the DeviceRegistryOnboardingWithNameResponseDTO received from System Registry Core System
-	 * @throws AuthException when you are not authorized by System Registry Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
-	 * @throws ArrowheadException when internal server error happened at System Registry Core System
-	 * @throws UnavailableServerException when System Registry Core System is not available
-	 */
-	public SystemRegistryOnboardingWithNameResponseDTO onboardSystemWithName(final SystemRegistryOnboardingWithNameRequestDTO request) {
-		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_NAME_SERVICE);
-		if (uri == null) {
-			logger.debug("Onboarding of system couldn't be proceeded due to the following reason: " +  CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_NAME_SERVICE.name() + " not known by Arrowhead Context");
-			return null;
-		}
-		
-		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, SystemRegistryOnboardingWithNameResponseDTO.class, request).getBody();
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/**
-	 * Sends a http(s) 'system-onboarding-with-csr' request to System Registry Core System.
-	 * 
-	 * @param request SystemRegistryOnboardingWithCsrRequestDTO which represents the required payload of the http(s) request
-	 * @return the SystemRegistryOnboardingWithCsrRequestDTO received from System Registry Core System
-	 * @throws AuthException when you are not authorized by System Registry Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
-	 * @throws ArrowheadException when internal server error happened at System Registry Core System
-	 * @throws UnavailableServerException when System Registry Core System is not available
-	 */
-	public SystemRegistryOnboardingWithCsrRequestDTO onboardSystemWithCSR(final SystemRegistryOnboardingWithCsrRequestDTO request) {
-		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_CSR_SERVICE);
-		if (uri == null) {
-			logger.debug("Onboarding of system couldn't be proceeded due to the following reason: " +  CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_CSR_SERVICE.name() + " not known by Arrowhead Context");
-			return null;
-		}
-		
-		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, SystemRegistryOnboardingWithCsrRequestDTO.class, request).getBody();
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/**
 	 * Sends a http(s) 'device-onboarding-with-name' request to Device Registry Core System.
 	 * 
 	 * @param request DeviceRegistryOnboardingWithNameRequestDTO which represents the required payload of the http(s) request
@@ -672,6 +646,126 @@ public class ArrowheadService {
 		}
 		
 		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, DeviceRegistryOnboardingWithCsrResponseDTO.class, request).getBody();
+	}
+	
+	//=================================================================================================
+	// Event Handler Services
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'subscription' request to Event Handler Core System.
+	 * 
+	 * @param request SubscriptionRequestDTO which represents the required payload of the http(s) request
+	 * @throws AuthException when you are not authorized by Event Handler Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
+	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
+	 * @throws UnavailableServerException when Event Handler Core System is not available
+	 */
+	public void subscribeToEventHandler(final SubscriptionRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_SUBSCRIBE_SERVICE);
+		if (uri == null) {
+			logger.debug("Subscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_SUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
+			return;
+		}
+		
+		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'unsubscription' request to Event Handler Core System.
+	 * 
+	 * @param eventType String which represents the required eventType parameter of the http(s) request
+	 * @param subscriberName String which represents the required subscriberName parameter of the http(s) request
+	 * @param subscriberAddress String which represents the required subscriberAddress parameter of the http(s) request
+	 * @param subscriberPort int which represents the required subscriberPort parameter of the http(s) request
+	 * @throws AuthException when you are not authorized by Event Handler Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
+	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
+	 * @throws UnavailableServerException when Event Handler Core System is not available
+	 */
+	public void unsubscribeFromEventHandler(final String eventType, final String subscriberName, final String subscriberAddress, final int subscriberPort ) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_UNSUBSCRIBE_SERVICE);
+		if (uri == null) {
+			logger.debug("Unsubscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_UNSUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
+			return;
+		}
+		
+		final MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
+		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_EVENT_TYPE, eventType);
+		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_SYSTEM_NAME, subscriberName);
+		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_ADDRESS, subscriberAddress);
+		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_PORT, String.valueOf(subscriberPort));
+		
+		final UriComponents unsubscribeUri = Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), requestParams, uri.getPath());		
+		httpService.sendRequest(unsubscribeUri, HttpMethod.DELETE, Void.class);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'publish' request to Event Handler Core System.
+	 * 
+	 * @param request EventPublishRequestDTO which represents the required payload of the http(s) request
+	 * @throws AuthException when you are not authorized by Event Handler Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
+	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
+	 * @throws UnavailableServerException when Event Handler Core System is not available
+	 */
+	public void publishToEventHandler(final EventPublishRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_PUBLISH_SERVICE);
+		if (uri == null) {
+			logger.debug("Publishing couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_PUBLISH_SERVICE.name() + " not known by Arrowhead Context");
+			return;
+		}
+		
+		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
+	}
+	
+	//=================================================================================================
+	// Application System support methods
+	
+	//-------------------------------------------------------------------------------------------------
+	/** 
+	 * @return your public key or null when https mode is not enabled
+	 */
+	public PublicKey getMyPublicKey() {
+		if (sslProperties.isSslEnabled()) {
+			return (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
+		} else {
+			return null;
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/** 
+	 * @return your private key or null when https mode is not enabled
+	 */
+	public PrivateKey getMyPrivateKey() {
+		if (sslProperties.isSslEnabled()) {
+			return (PrivateKey) arrowheadContext.get(CommonConstants.SERVER_PRIVATE_KEY);
+		} else {
+			return null;
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * @return an Orchestration form builder prefilled with your system properties
+	 */
+	public Builder getOrchestrationFormBuilder() {
+		final SystemRequestDTO thisSystem = new SystemRequestDTO();
+		thisSystem.setSystemName(applicationSystemName);
+		thisSystem.setAddress(applicationSystemAddress);
+		thisSystem.setPort(applicationSystemPort);
+		if (sslProperties.isSslEnabled()) {
+			final PublicKey publicKey = (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
+			thisSystem.setAuthenticationInfo(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
+		}
+		
+		return new OrchestrationFormRequestDTO.Builder(thisSystem);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
@@ -964,79 +1058,6 @@ public class ArrowheadService {
 
 		logger.info("Disconnecting from MQTT broker");
 		client.disconnect();
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	/**
-	 * Sends a http(s) 'subscription' request to Event Handler Core System.
-	 * 
-	 * @param request SubscriptionRequestDTO which represents the required payload of the http(s) request
-	 * @throws AuthException when you are not authorized by Event Handler Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
-	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
-	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
-	 * @throws UnavailableServerException when Event Handler Core System is not available
-	 */
-	public void subscribeToEventHandler(final SubscriptionRequestDTO request) {
-		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_SUBSCRIBE_SERVICE);
-		if (uri == null) {
-			logger.debug("Subscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_SUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
-			return;
-		}
-		
-		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/**
-	 * Sends a http(s) 'unsubscription' request to Event Handler Core System.
-	 * 
-	 * @param eventType String which represents the required eventType parameter of the http(s) request
-	 * @param subscriberName String which represents the required subscriberName parameter of the http(s) request
-	 * @param subscriberAddress String which represents the required subscriberAddress parameter of the http(s) request
-	 * @param subscriberPort int which represents the required subscriberPort parameter of the http(s) request
-	 * @throws AuthException when you are not authorized by Event Handler Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
-	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
-	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
-	 * @throws UnavailableServerException when Event Handler Core System is not available
-	 */
-	public void unsubscribeFromEventHandler(final String eventType, final String subscriberName, final String subscriberAddress, final int subscriberPort ) {
-		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_UNSUBSCRIBE_SERVICE);
-		if (uri == null) {
-			logger.debug("Unsubscription couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_UNSUBSCRIBE_SERVICE.name() + " not known by Arrowhead Context");
-			return;
-		}
-		
-		final MultiValueMap<String, String> requestParams = new LinkedMultiValueMap<>();
-		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_EVENT_TYPE, eventType);
-		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_SYSTEM_NAME, subscriberName);
-		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_ADDRESS, subscriberAddress);
-		requestParams.add(CommonConstants.OP_EVENTHANDLER_UNSUBSCRIBE_REQUEST_PARAM_SUBSCRIBER_PORT, String.valueOf(subscriberPort));
-		
-		final UriComponents unsubscribeUri = Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), requestParams, uri.getPath());		
-		httpService.sendRequest(unsubscribeUri, HttpMethod.DELETE, Void.class);
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/**
-	 * Sends a http(s) 'publish' request to Event Handler Core System.
-	 * 
-	 * @param request EventPublishRequestDTO which represents the required payload of the http(s) request
-	 * @throws AuthException when you are not authorized by Event Handler Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by Event Handler Core System 
-	 * @throws InvalidParameterException when the payload content couldn't be validated by Event Handler Core System
-	 * @throws ArrowheadException when internal server error happened at Event Handler Core System
-	 * @throws UnavailableServerException when Event Handler Core System is not available
-	 */
-	public void publishToEventHandler(final EventPublishRequestDTO request) {
-		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.EVENT_PUBLISH_SERVICE);
-		if (uri == null) {
-			logger.debug("Publishing couldn't be proceeded due to the following reason: " +  CoreSystemService.EVENT_PUBLISH_SERVICE.name() + " not known by Arrowhead Context");
-			return;
-		}
-		
-		httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, Void.class, request);
 	}
 	
 	//-------------------------------------------------------------------------------------------------
