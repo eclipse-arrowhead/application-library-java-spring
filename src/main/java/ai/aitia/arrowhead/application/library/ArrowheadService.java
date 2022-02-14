@@ -78,6 +78,9 @@ import eu.arrowhead.common.dto.shared.ServiceQueryResultDTO;
 import eu.arrowhead.common.dto.shared.ServiceRegistryRequestDTO;
 import eu.arrowhead.common.dto.shared.ServiceRegistryResponseDTO;
 import eu.arrowhead.common.dto.shared.SubscriptionRequestDTO;
+import eu.arrowhead.common.dto.shared.SystemRegistryOnboardingWithCsrRequestDTO;
+import eu.arrowhead.common.dto.shared.SystemRegistryOnboardingWithNameRequestDTO;
+import eu.arrowhead.common.dto.shared.SystemRegistryOnboardingWithNameResponseDTO;
 import eu.arrowhead.common.dto.shared.SystemRegistryRequestDTO;
 import eu.arrowhead.common.dto.shared.SystemRegistryResponseDTO;
 import eu.arrowhead.common.dto.shared.SystemRequestDTO;
@@ -587,6 +590,47 @@ public class ArrowheadService {
 		return true;
 	}
 	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'system-onboarding-with-name' request to System Registry Core System.
+	 * 
+	 * @param request SystemRegistryOnboardingWithNameRequestDTO which represents the required payload of the http(s) request
+	 * @return the DeviceRegistryOnboardingWithNameResponseDTO received from System Registry Core System
+	 * @throws AuthException when you are not authorized by System Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
+	 * @throws ArrowheadException when internal server error happened at System Registry Core System
+	 * @throws UnavailableServerException when System Registry Core System is not available
+	 */
+	public SystemRegistryOnboardingWithNameResponseDTO onboardSystemWithName(final SystemRegistryOnboardingWithNameRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_NAME_SERVICE);
+		if (uri == null) {
+			logger.debug("Onboarding of system couldn't be proceeded due to the following reason: " +  CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_NAME_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, SystemRegistryOnboardingWithNameResponseDTO.class, request).getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'system-onboarding-with-csr' request to System Registry Core System.
+	 * 
+	 * @param request SystemRegistryOnboardingWithCsrRequestDTO which represents the required payload of the http(s) request
+	 * @return the SystemRegistryOnboardingWithCsrRequestDTO received from System Registry Core System
+	 * @throws AuthException when you are not authorized by System Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
+	 * @throws ArrowheadException when internal server error happened at System Registry Core System
+	 * @throws UnavailableServerException when System Registry Core System is not available
+	 */
+	public SystemRegistryOnboardingWithCsrRequestDTO onboardSystemWithCSR(final SystemRegistryOnboardingWithCsrRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_CSR_SERVICE);
+		if (uri == null) {
+			logger.debug("Onboarding of system couldn't be proceeded due to the following reason: " +  CoreSystemService.SYSTEMREGISTRY_ONBOARDING_WITH_CSR_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, SystemRegistryOnboardingWithCsrRequestDTO.class, request).getBody();
+	}
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
