@@ -63,6 +63,10 @@ import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
+import eu.arrowhead.common.dto.shared.DeviceRegistryOnboardingWithCsrRequestDTO;
+import eu.arrowhead.common.dto.shared.DeviceRegistryOnboardingWithCsrResponseDTO;
+import eu.arrowhead.common.dto.shared.DeviceRegistryOnboardingWithNameRequestDTO;
+import eu.arrowhead.common.dto.shared.DeviceRegistryOnboardingWithNameResponseDTO;
 import eu.arrowhead.common.dto.shared.DeviceRegistryRequestDTO;
 import eu.arrowhead.common.dto.shared.DeviceRegistryResponseDTO;
 import eu.arrowhead.common.dto.shared.EventPublishRequestDTO;
@@ -358,6 +362,113 @@ public class ArrowheadService {
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
+	 * Queries its public key from Authorization Core System. 
+	 * 
+	 * @return the public key of Authorization Core System or null when the public key core service URI is not known by ArrowheadContext component.
+	 * @throws AuthException when you are not authorized by Authorization Core System
+	 * @throws ArrowheadException when internal server error happened at Authorization Core System
+	 * @throws UnavailableServerException when Authorization Core System is not available
+	 */
+	public PublicKey queryAuthorizationPublicKey() {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.AUTH_PUBLIC_KEY_SERVICE);
+		if (uri == null) {
+			logger.debug("Authorization Public Key couldn't be retrieved due to the following reason: " +  CoreSystemService.AUTH_PUBLIC_KEY_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		final ResponseEntity<String> response = httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.GET, String.class);
+				
+		final String encodedKey = Utilities.fromJson(response.getBody(), String.class);
+		return Utilities.getPublicKeyFromBase64EncodedString(encodedKey);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/** 
+	 * @return your public key or null when https mode is not enabled
+	 */
+	public PublicKey getMyPublicKey() {
+		if (sslProperties.isSslEnabled()) {
+			return (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
+		} else {
+			return null;
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/** 
+	 * @return your private key or null when https mode is not enabled
+	 */
+	public PrivateKey getMyPrivateKey() {
+		if (sslProperties.isSslEnabled()) {
+			return (PrivateKey) arrowheadContext.get(CommonConstants.SERVER_PRIVATE_KEY);
+		} else {
+			return null;
+		}
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * @return an Orchestration form builder prefilled with your system properties
+	 */
+	public Builder getOrchestrationFormBuilder() {
+		final SystemRequestDTO thisSystem = new SystemRequestDTO();
+		thisSystem.setSystemName(applicationSystemName);
+		thisSystem.setAddress(applicationSystemAddress);
+		thisSystem.setPort(applicationSystemPort);
+		if (sslProperties.isSslEnabled()) {
+			final PublicKey publicKey = (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
+			thisSystem.setAuthenticationInfo(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
+		}
+		
+		return new OrchestrationFormRequestDTO.Builder(thisSystem);
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'orchestration' request to Orchestrator Core System.
+	 * 
+	 * @param request OrchestrationFormRequestDTO which represents the required payload of the http(s) request
+	 * @return the OrchestrationResponseDTO received from Orchestrator Core System or null when the orchestration service URI is not known by Arrowhead Context
+	 * @throws AuthException when you are not authorized by Orchestrator Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Orchestrator Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Orchestrator Core System
+	 * @throws ArrowheadException when internal server error happened at one of the core system involved in orchestration process 
+	 * @throws UnavailableServerException when one of the core system involved in orchestration process is not available 
+	 */
+	public OrchestrationResponseDTO proceedOrchestration(final OrchestrationFormRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.ORCHESTRATION_SERVICE);
+		if (uri == null) {
+			logger.debug("Orchestration couldn't be proceeded due to the following reason: " +  CoreSystemService.ORCHESTRATION_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, OrchestrationResponseDTO.class, request).getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'orchestration/{systemId}' request to Orchestrator Core System.
+	 * 
+	 * @param systemId long value which represents the required system id path variable
+	 * @return the OrchestrationResponseDTO with all top priority provider from Orchestration Store or null when the orchestration service URI is not known by Arrowhead Context
+	 * @throws AuthException when you are not authorized by Orchestrator Core System
+	 * @throws BadPayloadException when the systemId couldn't be validated by Orchestrator Core System 
+	 * @throws InvalidParameterException when the system is not found by Service Registry Core System
+	 * @throws ArrowheadException when internal server error happened at one of the core system involved in orchestration process 
+	 * @throws UnavailableServerException when one of the core system involved in orchestration process is not available 
+	 */
+	public OrchestrationResponseDTO queryOrchestrationStore(final long systemId) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.ORCHESTRATION_SERVICE);
+		if (uri == null) {
+			logger.debug("Orchestration from store couldn't be proceeded due to the following reason: " +  CoreSystemService.ORCHESTRATION_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath() + "/" + systemId), HttpMethod.GET, OrchestrationResponseDTO.class).getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
 	 * Sends a http(s) 'system-register' request to System Registry Core System.
 	 * 
 	 * @param request SystemRegistryRequestDTO which represents the required payload of the http(s) request
@@ -476,111 +587,47 @@ public class ArrowheadService {
 		return true;
 	}
 	
+	
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * Queries its public key from Authorization Core System. 
+	 * Sends a http(s) 'device-onboarding-with-name' request to Device Registry Core System.
 	 * 
-	 * @return the public key of Authorization Core System or null when the public key core service URI is not known by ArrowheadContext component.
-	 * @throws AuthException when you are not authorized by Authorization Core System
-	 * @throws ArrowheadException when internal server error happened at Authorization Core System
-	 * @throws UnavailableServerException when Authorization Core System is not available
+	 * @param request DeviceRegistryOnboardingWithNameRequestDTO which represents the required payload of the http(s) request
+	 * @return the DeviceRegistryOnboardingWithNameResponseDTO received from Device Registry Core System
+	 * @throws AuthException when you are not authorized by Device Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Device Registry Core System 
+	 * @throws ArrowheadException when internal server error happened at Device Registry Core System
+	 * @throws UnavailableServerException when Device Registry Core System is not available
 	 */
-	public PublicKey queryAuthorizationPublicKey() {
-		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.AUTH_PUBLIC_KEY_SERVICE);
+	public DeviceRegistryOnboardingWithNameResponseDTO onboardDeviceWithName(final DeviceRegistryOnboardingWithNameRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.DEVICEREGISTRY_ONBOARDING_WITH_NAME_SERVICE);
 		if (uri == null) {
-			logger.debug("Authorization Public Key couldn't be retrieved due to the following reason: " +  CoreSystemService.AUTH_PUBLIC_KEY_SERVICE.name() + " not known by Arrowhead Context");
+			logger.debug("Onboarding of device couldn't be proceeded due to the following reason: " +  CoreSystemService.DEVICEREGISTRY_ONBOARDING_WITH_NAME_SERVICE.name() + " not known by Arrowhead Context");
 			return null;
 		}
 		
-		final ResponseEntity<String> response = httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.GET, String.class);
-				
-		final String encodedKey = Utilities.fromJson(response.getBody(), String.class);
-		return Utilities.getPublicKeyFromBase64EncodedString(encodedKey);
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/** 
-	 * @return your public key or null when https mode is not enabled
-	 */
-	public PublicKey getMyPublicKey() {
-		if (sslProperties.isSslEnabled()) {
-			return (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
-		} else {
-			return null;
-		}
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/** 
-	 * @return your private key or null when https mode is not enabled
-	 */
-	public PrivateKey getMyPrivateKey() {
-		if (sslProperties.isSslEnabled()) {
-			return (PrivateKey) arrowheadContext.get(CommonConstants.SERVER_PRIVATE_KEY);
-		} else {
-			return null;
-		}
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, DeviceRegistryOnboardingWithNameResponseDTO.class, request).getBody();
 	}
 	
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * @return an Orchestration form builder prefilled with your system properties
-	 */
-	public Builder getOrchestrationFormBuilder() {
-		final SystemRequestDTO thisSystem = new SystemRequestDTO();
-		thisSystem.setSystemName(applicationSystemName);
-		thisSystem.setAddress(applicationSystemAddress);
-		thisSystem.setPort(applicationSystemPort);
-		if (sslProperties.isSslEnabled()) {
-			final PublicKey publicKey = (PublicKey) arrowheadContext.get(CommonConstants.SERVER_PUBLIC_KEY);
-			thisSystem.setAuthenticationInfo(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
-		}
-		
-		return new OrchestrationFormRequestDTO.Builder(thisSystem);
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/**
-	 * Sends a http(s) 'orchestration' request to Orchestrator Core System.
+	 * Sends a http(s) 'device-onboarding-with-csr' request to Device Registry Core System.
 	 * 
-	 * @param request OrchestrationFormRequestDTO which represents the required payload of the http(s) request
-	 * @return the OrchestrationResponseDTO received from Orchestrator Core System or null when the orchestration service URI is not known by Arrowhead Context
-	 * @throws AuthException when you are not authorized by Orchestrator Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by Orchestrator Core System 
-	 * @throws InvalidParameterException when the payload content couldn't be validated by Orchestrator Core System
-	 * @throws ArrowheadException when internal server error happened at one of the core system involved in orchestration process 
-	 * @throws UnavailableServerException when one of the core system involved in orchestration process is not available 
+	 * @param request DeviceRegistryOnboardingWithCsrRequestDTO which represents the required payload of the http(s) request
+	 * @return the DeviceRegistryOnboardingWithCsrResponseDTO received from Device Registry Core System
+	 * @throws AuthException when you are not authorized by Device Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Device Registry Core System 
+	 * @throws ArrowheadException when internal server error happened at Device Registry Core System
+	 * @throws UnavailableServerException when Device Registry Core System is not available
 	 */
-	public OrchestrationResponseDTO proceedOrchestration(final OrchestrationFormRequestDTO request) {
-		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.ORCHESTRATION_SERVICE);
+	public DeviceRegistryOnboardingWithCsrResponseDTO onboardDeviceWithCSR(final DeviceRegistryOnboardingWithCsrRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.DEVICEREGISTRY_ONBOARDING_WITH_CSR_SERVICE);
 		if (uri == null) {
-			logger.debug("Orchestration couldn't be proceeded due to the following reason: " +  CoreSystemService.ORCHESTRATION_SERVICE.name() + " not known by Arrowhead Context");
+			logger.debug("Onboarding of device couldn't be proceeded due to the following reason: " +  CoreSystemService.DEVICEREGISTRY_ONBOARDING_WITH_CSR_SERVICE.name() + " not known by Arrowhead Context");
 			return null;
 		}
 		
-		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, OrchestrationResponseDTO.class, request).getBody();
-	}
-	
-	//-------------------------------------------------------------------------------------------------
-	/**
-	 * Sends a http(s) 'orchestration/{systemId}' request to Orchestrator Core System.
-	 * 
-	 * @param systemId long value which represents the required system id path variable
-	 * @return the OrchestrationResponseDTO with all top priority provider from Orchestration Store or null when the orchestration service URI is not known by Arrowhead Context
-	 * @throws AuthException when you are not authorized by Orchestrator Core System
-	 * @throws BadPayloadException when the systemId couldn't be validated by Orchestrator Core System 
-	 * @throws InvalidParameterException when the system is not found by Service Registry Core System
-	 * @throws ArrowheadException when internal server error happened at one of the core system involved in orchestration process 
-	 * @throws UnavailableServerException when one of the core system involved in orchestration process is not available 
-	 */
-	public OrchestrationResponseDTO queryOrchestrationStore(final long systemId) {
-		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.ORCHESTRATION_SERVICE);
-		if (uri == null) {
-			logger.debug("Orchestration from store couldn't be proceeded due to the following reason: " +  CoreSystemService.ORCHESTRATION_SERVICE.name() + " not known by Arrowhead Context");
-			return null;
-		}
-		
-		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath() + "/" + systemId), HttpMethod.GET, OrchestrationResponseDTO.class).getBody();
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, DeviceRegistryOnboardingWithCsrResponseDTO.class, request).getBody();
 	}
 	
 	//-------------------------------------------------------------------------------------------------
