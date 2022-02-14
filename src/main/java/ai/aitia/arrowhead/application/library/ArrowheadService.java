@@ -63,6 +63,8 @@ import eu.arrowhead.common.SSLProperties;
 import eu.arrowhead.common.Utilities;
 import eu.arrowhead.common.core.CoreSystem;
 import eu.arrowhead.common.core.CoreSystemService;
+import eu.arrowhead.common.dto.shared.DeviceRegistryRequestDTO;
+import eu.arrowhead.common.dto.shared.DeviceRegistryResponseDTO;
 import eu.arrowhead.common.dto.shared.EventPublishRequestDTO;
 import eu.arrowhead.common.dto.shared.OrchestrationFormRequestDTO;
 import eu.arrowhead.common.dto.shared.OrchestrationFormRequestDTO.Builder;
@@ -345,7 +347,7 @@ public class ArrowheadService {
 	 */
 	public void unregisterSystemFromServiceRegistry() {
 		final String unregisterUriStr = CommonConstants.SERVICEREGISTRY_URI + CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_SYSTEM_URI;
-		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(5);
+		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(3);
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_SYSTEM_NAME, List.of(applicationSystemName));
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_ADDRESS, List.of(applicationSystemAddress));
 		queryMap.put(CommonConstants.OP_SERVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PORT, List.of(String.valueOf(applicationSystemPort)));
@@ -360,11 +362,11 @@ public class ArrowheadService {
 	 * 
 	 * @param request SystemRegistryRequestDTO which represents the required payload of the http(s) request
 	 * @return the SystemRegistryResponseDTO received from System Registry Core System
-	 * @throws AuthException when you are not authorized by Service Registry Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
-	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
-	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
-	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 * @throws AuthException when you are not authorized by System Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by System Registry Core System
+	 * @throws ArrowheadException when internal server error happened at System Registry Core System
+	 * @throws UnavailableServerException when System Registry Core System is not available
 	 */
 	public SystemRegistryResponseDTO registerSystemToSystemRegistry(final SystemRegistryRequestDTO request) {
 		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_REGISTER_SERVICE);
@@ -382,11 +384,11 @@ public class ArrowheadService {
 	 * 
 	 * @param request SystemRegistryRequestDTO which represents the required payload of the http(s) request
 	 * @return the SystemRegistryResponseDTO received from System Registry Core System
-	 * @throws AuthException when you are not authorized by Service Registry Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
-	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
-	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
-	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 * @throws AuthException when you are not authorized by System Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by System Registry Core System
+	 * @throws ArrowheadException when internal server error happened at System Registry Core System
+	 * @throws UnavailableServerException when System Registry Core System is not available
 	 */
 	public SystemRegistryResponseDTO forceRegisterSystemToSystemRegistry(final SystemRegistryRequestDTO request) {
 		try {
@@ -402,11 +404,11 @@ public class ArrowheadService {
 	 * Sends a http(s) 'system-unregister' request to System Registry Core System.
 	 * 
 	 * @return true if successfully deregistered or false if the service is not known by Arrowhead Context
-	 * @throws AuthException when you are not authorized by Service Registry Core System
-	 * @throws BadPayloadException when the payload couldn't be validated by Service Registry Core System 
-	 * @throws InvalidParameterException when the payload content couldn't be validated by Service Registry Core System
-	 * @throws ArrowheadException when internal server error happened at Service Registry Core System
-	 * @throws UnavailableServerException when Service Registry Core System is not available
+	 * @throws AuthException when you are not authorized by System Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by System Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by System Registry Core System
+	 * @throws ArrowheadException when internal server error happened at System Registry Core System
+	 * @throws UnavailableServerException when System Registry Core System is not available
 	 */
 	public boolean unregisterSystemFromSystemRegistry() {
 		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.SYSTEMREGISTRY_UNREGISTER_SERVICE);
@@ -415,10 +417,59 @@ public class ArrowheadService {
 			return false;
 		}
 		
-		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(5);
+		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(3);
 		queryMap.put(CommonConstants.OP_SYSTEMREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_SYSTEM_NAME, List.of(applicationSystemName));
 		queryMap.put(CommonConstants.OP_SYSTEMREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_ADDRESS, List.of(applicationSystemAddress));
 		queryMap.put(CommonConstants.OP_SYSTEMREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_PORT, List.of(String.valueOf(applicationSystemPort)));
+		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), queryMap, uri.getPath());
+		
+		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
+		return true;
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'device-register' request to Device Registry Core System.
+	 * 
+	 * @param request DeviceRegistryRequestDTO which represents the required payload of the http(s) request
+	 * @return the DeviceRegistryResponseDTO received from Device Registry Core System
+	 * @throws AuthException when you are not authorized by Device Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Device Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Device Registry Core System
+	 * @throws ArrowheadException when internal server error happened at Device Registry Core System
+	 * @throws UnavailableServerException when Device Registry Core System is not available
+	 */
+	public DeviceRegistryResponseDTO registerDeviceToDeviceRegistry(final DeviceRegistryRequestDTO request) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.DEVICEREGISTRY_REGISTER_SERVICE);
+		if (uri == null) {
+			logger.debug("Device registration couldn't be proceeded due to the following reason: " +  CoreSystemService.DEVICEREGISTRY_REGISTER_SERVICE.name() + " not known by Arrowhead Context");
+			return null;
+		}
+		
+		return httpService.sendRequest(Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), uri.getPath()), HttpMethod.POST, DeviceRegistryResponseDTO.class, request).getBody();
+	}
+	
+	//-------------------------------------------------------------------------------------------------
+	/**
+	 * Sends a http(s) 'device-unregister' request to Device Registry Core System.
+	 * 
+	 * @return true if successfully deregistered or false if the service is not known by Arrowhead Context
+	 * @throws AuthException when you are not authorized by Device Registry Core System
+	 * @throws BadPayloadException when the payload couldn't be validated by Device Registry Core System 
+	 * @throws InvalidParameterException when the payload content couldn't be validated by Device Registry Core System
+	 * @throws ArrowheadException when internal server error happened at Device Registry Core System
+	 * @throws UnavailableServerException when Device Registry Core System is not available
+	 */
+	public boolean unregisterDeviceFromDeviceRegistry(final String deviceName, final String macAdders) {
+		final CoreServiceUri uri = getCoreServiceUri(CoreSystemService.DEVICEREGISTRY_UNREGISTER_SERVICE);
+		if (uri == null) {
+			logger.debug("Device deregistration couldn't be proceeded due to the following reason: " +  CoreSystemService.DEVICEREGISTRY_UNREGISTER_SERVICE.name() + " not known by Arrowhead Context");
+			return false;
+		}
+		
+		final MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(2);
+		queryMap.put(CommonConstants.OP_DEVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_DEVICE_NAME, List.of(deviceName));
+		queryMap.put(CommonConstants.OP_DEVICEREGISTRY_UNREGISTER_REQUEST_PARAM_PROVIDER_MAC_ADDRESS, List.of(macAdders));
 		final UriComponents unregisterUri = Utilities.createURI(getUriScheme(), uri.getAddress(), uri.getPort(), queryMap, uri.getPath());
 		
 		httpService.sendRequest(unregisterUri, HttpMethod.DELETE, Void.class);
@@ -768,7 +819,7 @@ public class ArrowheadService {
 
 		if(sslProperties.isSslEnabled()) {
 			try {
-				Properties sslMQTTProperties = new Properties();
+				final Properties sslMQTTProperties = new Properties();
 				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORE, sslProperties.getKeyStore().getFile().getAbsolutePath());
 				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTOREPWD, sslProperties.getKeyPassword());
 				sslMQTTProperties.put(SSLSocketFactoryFactory.KEYSTORETYPE, sslProperties.getKeyStoreType());
@@ -778,7 +829,7 @@ public class ArrowheadService {
 				sslMQTTProperties.put(SSLSocketFactoryFactory.TRUSTSTORETYPE, sslProperties.getKeyStoreType()); //intentionally the same
 
 				connOpts.setSSLProperties(sslMQTTProperties);
-			} catch(Exception err) {
+			} catch(final Exception err) {
 				logger.error("MQTTS security exception: " + err);
 				throw new ArrowheadException("Bad certificate settings");
 			}
